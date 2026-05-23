@@ -1,9 +1,9 @@
 import { CONFIG } from "@/config.js";
+import { State } from "@/core/state.js";
 import { DataModelResolver } from "@/dom/resolver.js";
 import { AgeParser } from "@/parsers/age.js";
 import { DurationParser } from "@/parsers/duration.js";
 import { ViewsParser } from "@/parsers/views.js";
-import { State } from "@/core/state.js";
 
 export const FilterEngine = {
 	apply() {

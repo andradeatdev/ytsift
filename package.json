@@ -8,10 +8,11 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "build:watch": "node --watch-path=src scripts/build.mjs",
-    "format": "biome format src/ --write",
-    "lint:src": "biome lint src/",
+    "check": "biome check src/",
+    "check:write": "biome check src/ --write",
     "lint:metadata": "eslint ytsift.user.js",
-    "lint": "pnpm lint:src && pnpm lint:metadata",
+    "tsc": "tsc",
+    "validate": "pnpm check && pnpm lint:metadata && pnpm tsc",
     "prepare": "husky"
   },
   "devDependencies": {
@@ -27,8 +28,7 @@
   },
   "lint-staged": {
     "src/**/*.js": [
-      "biome format --write",
-      "biome lint"
+      "biome check --write"
     ],
     "ytsift.user.js": [
       "eslint"
