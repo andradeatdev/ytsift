@@ -11,8 +11,10 @@
     "check": "biome check src/",
     "check:write": "biome check src/ --write",
     "lint:metadata": "eslint ytsift.user.js",
+    "lint:metadata:write": "eslint ytsift.user.js --fix",
     "tsc": "tsc",
     "validate": "pnpm check && pnpm lint:metadata && pnpm tsc",
+    "validate:write": "pnpm check:write && pnpm lint:metadata:write && pnpm tsc",
     "prepare": "husky"
   },
   "devDependencies": {
