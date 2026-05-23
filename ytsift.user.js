@@ -495,9 +495,9 @@ class TextFilter extends BaseFilter {
         for (const word of allWords) {
             if (word.startsWith("-") && word.length > 1) {
                 this.negativeWords.push(word.slice(1));
-            } else {
-                this.positiveWords.push(word);
+                continue;
             }
+            this.positiveWords.push(word);
         }
         this.active = this.positiveWords.length > 0 || this.negativeWords.length > 0;
     }
@@ -716,15 +716,10 @@ const DurationParser = {
         if (!durationStr) return 0;
         const cleanStr = durationStr.replace(/[^\d:]/g, "");
         const parts = cleanStr.split(":").map(Number);
-        let seconds = 0;
-        if (parts.length === 2) {
-            seconds = parts[0] * 60 + parts[1];
-        } else if (parts.length === 3) {
-            seconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
-        } else if (parts.length === 1) {
-            seconds = parts[0];
-        }
-        return seconds;
+        if (parts.length === 2) return parts[0] * 60 + parts[1];
+        if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+        if (parts.length === 1) return parts[0];
+        return 0;
     },
 };
 
@@ -1057,7 +1052,8 @@ const PopoverManager = {
                 if (trigger) {
                     this.position(this.durationPopover, trigger);
                 }
-            } else if (e.newState === "closed") {
+            }
+            if (e.newState === "closed") {
                 this.lastDurationClosedTime = Date.now();
             }
         });
@@ -1072,7 +1068,8 @@ const PopoverManager = {
                 if (trigger) {
                     this.position(this.viewsPopover, trigger);
                 }
-            } else if (e.newState === "closed") {
+            }
+            if (e.newState === "closed") {
                 this.lastViewsClosedTime = Date.now();
             }
         });
@@ -1087,7 +1084,8 @@ const PopoverManager = {
                 if (trigger) {
                     this.position(this.watchedPopover, trigger);
                 }
-            } else if (e.newState === "closed") {
+            }
+            if (e.newState === "closed") {
                 this.lastWatchedClosedTime = Date.now();
             }
         });
@@ -1102,7 +1100,8 @@ const PopoverManager = {
                 if (trigger) {
                     this.position(this.agePopover, trigger);
                 }
-            } else if (e.newState === "closed") {
+            }
+            if (e.newState === "closed") {
                 this.lastAgeClosedTime = Date.now();
             }
         });
@@ -1239,31 +1238,38 @@ const PopoverManager = {
             if (max === Infinity) {
                 maxSlider.value = "120";
                 maxValSpan.textContent = "Max";
-            } else {
-                maxSlider.value = max;
-                maxValSpan.textContent = `${max}m`;
+                return;
             }
+            maxSlider.value = max;
+            maxValSpan.textContent = `${max}m`;
         };
 
         const handlePresetClick = (preset) => {
             const isCurrent = State.filters.duration.preset === preset;
             if (isCurrent) {
                 State.filters.duration.reset();
-            } else {
-                let min = 0;
-                let max = Infinity;
-                if (preset === "short") {
-                    min = 0;
-                    max = 4;
-                } else if (preset === "medium") {
-                    min = 4;
-                    max = 20;
-                } else if (preset === "long") {
-                    min = 20;
-                    max = Infinity;
-                }
-                State.filters.duration.setRange(min, max, preset);
+                updateUI();
+                updatePresetActiveClasses(State.filters.duration.preset);
+                UIBuilder.updateDurationChipText();
+                FilterEngine.apply();
+                return;
             }
+
+            let min = 0;
+            let max = Infinity;
+            if (preset === "short") {
+                min = 0;
+                max = 4;
+            }
+            if (preset === "medium") {
+                min = 4;
+                max = 20;
+            }
+            if (preset === "long") {
+                min = 20;
+                max = Infinity;
+            }
+            State.filters.duration.setRange(min, max, preset);
             updateUI();
             updatePresetActiveClasses(State.filters.duration.preset);
             UIBuilder.updateDurationChipText();
@@ -1288,9 +1294,11 @@ const PopoverManager = {
             let preset = "custom";
             if (min === 0 && limitMax === 4) {
                 preset = "short";
-            } else if (min === 4 && limitMax === 20) {
+            }
+            if (min === 4 && limitMax === 20) {
                 preset = "medium";
-            } else if (min === 20 && limitMax === Infinity) {
+            }
+            if (min === 20 && limitMax === Infinity) {
                 preset = "long";
             }
             State.filters.duration.setRange(min, limitMax, preset);
@@ -1474,10 +1482,10 @@ const PopoverManager = {
             if (currentType === "all") {
                 sliderContainer.style.opacity = "0.5";
                 slider.disabled = true;
-            } else {
-                sliderContainer.style.opacity = "1";
-                slider.disabled = false;
+                return;
             }
+            sliderContainer.style.opacity = "1";
+            slider.disabled = false;
         };
 
         const handleTypeClick = (type) => {
@@ -1679,13 +1687,9 @@ const PopoverManager = {
         if (btnWatched) btnWatched.classList.toggle("active", type === "watched");
 
         if (sliderContainer) {
-            if (type === "all") {
-                sliderContainer.style.opacity = "0.5";
-                if (slider) slider.disabled = true;
-            } else {
-                sliderContainer.style.opacity = "1";
-                if (slider) slider.disabled = false;
-            }
+            const isAll = type === "all";
+            sliderContainer.style.opacity = isAll ? "0.5" : "1";
+            if (slider) slider.disabled = isAll;
         }
     },
 
@@ -2213,50 +2217,67 @@ const UIBuilder = {
     updateWatchedChipText() {
         const chip = document.getElementById("ytsift-chip-watched");
         if (!chip) return;
+
         if (!State.filters.watched.isActive()) {
             chip.textContent = "Status ▾";
             chip.classList.remove(CONFIG.CLASSES.ACTIVE);
             chip.setAttribute("aria-pressed", "false");
-        } else {
-            chip.classList.add(CONFIG.CLASSES.ACTIVE);
-            chip.setAttribute("aria-pressed", "true");
-            const type = State.filters.watched.type;
-            const percent = State.filters.watched.percent;
-            if (type === "watched") {
-                chip.textContent = `Watched (>= ${percent}%) ▾`;
-            } else if (type === "unwatched") {
-                chip.textContent = `Unwatched (< ${percent}%) ▾`;
-            } else {
-                chip.textContent = "Status ▾";
-                chip.classList.remove(CONFIG.CLASSES.ACTIVE);
-                chip.setAttribute("aria-pressed", "false");
-            }
+            return;
         }
+
+        chip.classList.add(CONFIG.CLASSES.ACTIVE);
+        chip.setAttribute("aria-pressed", "true");
+
+        const type = State.filters.watched.type;
+        const percent = State.filters.watched.percent;
+
+        if (type === "watched") {
+            chip.textContent = `Watched (>= ${percent}%) ▾`;
+            return;
+        }
+
+        if (type === "unwatched") {
+            chip.textContent = `Unwatched (< ${percent}%) ▾`;
+            return;
+        }
+
+        chip.textContent = "Status ▾";
+        chip.classList.remove(CONFIG.CLASSES.ACTIVE);
+        chip.setAttribute("aria-pressed", "false");
     },
 
     updateDurationChipText() {
         const chip = document.getElementById("ytsift-chip-duration");
         if (!chip) return;
+
         if (State.filters.duration.preset === null) {
             chip.textContent = "Duration ▾";
             chip.classList.remove(CONFIG.CLASSES.ACTIVE);
             chip.setAttribute("aria-pressed", "false");
-        } else {
-            chip.classList.add(CONFIG.CLASSES.ACTIVE);
-            chip.setAttribute("aria-pressed", "true");
-            let label = "";
-            if (State.filters.duration.preset === "short" && State.filters.duration.min === 0 && State.filters.duration.max === 4) {
-                label = "Short";
-            } else if (State.filters.duration.preset === "medium" && State.filters.duration.min === 4 && State.filters.duration.max === 20) {
-                label = "Medium";
-            } else if (State.filters.duration.preset === "long" && State.filters.duration.min === 20 && State.filters.duration.max === Infinity) {
-                label = "Long";
-            } else {
-                const maxText = State.filters.duration.max === Infinity ? "+" : `-${State.filters.duration.max}`;
-                label = `${State.filters.duration.min}${maxText}m`;
-            }
-            chip.textContent = `Duration: ${label} ▾`;
+            return;
         }
+
+        chip.classList.add(CONFIG.CLASSES.ACTIVE);
+        chip.setAttribute("aria-pressed", "true");
+
+        const min = State.filters.duration.min;
+        const max = State.filters.duration.max;
+
+        if (State.filters.duration.preset === "short" && min === 0 && max === 4) {
+            chip.textContent = "Duration: Short ▾";
+            return;
+        }
+        if (State.filters.duration.preset === "medium" && min === 4 && max === 20) {
+            chip.textContent = "Duration: Medium ▾";
+            return;
+        }
+        if (State.filters.duration.preset === "long" && min === 20 && max === Infinity) {
+            chip.textContent = "Duration: Long ▾";
+            return;
+        }
+
+        const maxText = max === Infinity ? "+" : `-${max}`;
+        chip.textContent = `Duration: ${min}${maxText}m ▾`;
     },
 
     formatViewsLabel(val) {
@@ -2268,77 +2289,95 @@ const UIBuilder = {
     updateViewsChipText() {
         const chip = document.getElementById("ytsift-chip-views");
         if (!chip) return;
+
         if (!State.filters.views.isActive()) {
             chip.textContent = "Views ▾";
             chip.classList.remove(CONFIG.CLASSES.ACTIVE);
             chip.setAttribute("aria-pressed", "false");
-        } else {
-            chip.classList.add(CONFIG.CLASSES.ACTIVE);
-            chip.setAttribute("aria-pressed", "true");
-            if (State.filters.views.min === 0 && State.filters.views.max === Infinity) {
-                chip.textContent = "Views ▾";
-                chip.classList.remove(CONFIG.CLASSES.ACTIVE);
-                chip.setAttribute("aria-pressed", "false");
-                State.filters.views.reset();
-            } else {
-                let label = "";
-                if (State.filters.views.min > 0 && State.filters.views.max === Infinity) {
-                    label = `>${this.formatViewsLabel(State.filters.views.min)}`;
-                } else if (State.filters.views.min === 0 && State.filters.views.max < Infinity) {
-                    label = `<${this.formatViewsLabel(State.filters.views.max)}`;
-                } else {
-                    label = `${this.formatViewsLabel(State.filters.views.min)}-${this.formatViewsLabel(State.filters.views.max)}`;
-                }
-                chip.textContent = `Views: ${label} ▾`;
-            }
+            return;
         }
+
+        chip.classList.add(CONFIG.CLASSES.ACTIVE);
+        chip.setAttribute("aria-pressed", "true");
+
+        const min = State.filters.views.min;
+        const max = State.filters.views.max;
+
+        if (min === 0 && max === Infinity) {
+            chip.textContent = "Views ▾";
+            chip.classList.remove(CONFIG.CLASSES.ACTIVE);
+            chip.setAttribute("aria-pressed", "false");
+            State.filters.views.reset();
+            return;
+        }
+
+        if (min > 0 && max === Infinity) {
+            chip.textContent = `Views: >${this.formatViewsLabel(min)} ▾`;
+            return;
+        }
+
+        if (min === 0 && max < Infinity) {
+            chip.textContent = `Views: <${this.formatViewsLabel(max)} ▾`;
+            return;
+        }
+
+        chip.textContent = `Views: ${this.formatViewsLabel(min)}-${this.formatViewsLabel(max)} ▾`;
     },
 
     updateAgeChipText() {
         const chip = document.getElementById("ytsift-chip-age");
         if (!chip) return;
+
         if (!State.filters.age.isActive()) {
             chip.textContent = "Age ▾";
             chip.classList.remove(CONFIG.CLASSES.ACTIVE);
             chip.setAttribute("aria-pressed", "false");
-        } else {
-            chip.classList.add(CONFIG.CLASSES.ACTIVE);
-            chip.setAttribute("aria-pressed", "true");
-            if (State.filters.age.min === 0 && State.filters.age.max === Infinity) {
-                chip.textContent = "Age ▾";
-                chip.classList.remove(CONFIG.CLASSES.ACTIVE);
-                chip.setAttribute("aria-pressed", "false");
-                State.filters.age.reset();
-            } else {
-                const formatAgeLabel = (days) => {
-                    if (days === 0) return "0d";
-                    if (days === Infinity) return "Max";
-                    if (days >= 365) {
-                        const yrs = days / 365;
-                        return `${yrs.toFixed(1).replace(".0", "")}y`;
-                    }
-                    if (days >= 30) {
-                        const mos = days / 30;
-                        return `${mos.toFixed(1).replace(".0", "")}mo`;
-                    }
-                    if (days >= 7) {
-                        const wks = days / 7;
-                        return `${wks.toFixed(1).replace(".0", "")}w`;
-                    }
-                    return `${days}d`;
-                };
-
-                let label = "";
-                if (State.filters.age.min > 0 && State.filters.age.max === Infinity) {
-                    label = `>${formatAgeLabel(State.filters.age.min)}`;
-                } else if (State.filters.age.min === 0 && State.filters.age.max < Infinity) {
-                    label = `<${formatAgeLabel(State.filters.age.max)}`;
-                } else {
-                    label = `${formatAgeLabel(State.filters.age.min)}-${formatAgeLabel(State.filters.age.max)}`;
-                }
-                chip.textContent = `Age: ${label} ▾`;
-            }
+            return;
         }
+
+        chip.classList.add(CONFIG.CLASSES.ACTIVE);
+        chip.setAttribute("aria-pressed", "true");
+
+        const min = State.filters.age.min;
+        const max = State.filters.age.max;
+
+        if (min === 0 && max === Infinity) {
+            chip.textContent = "Age ▾";
+            chip.classList.remove(CONFIG.CLASSES.ACTIVE);
+            chip.setAttribute("aria-pressed", "false");
+            State.filters.age.reset();
+            return;
+        }
+
+        const formatAgeLabel = (days) => {
+            if (days === 0) return "0d";
+            if (days === Infinity) return "Max";
+            if (days >= 365) {
+                const yrs = days / 365;
+                return `${yrs.toFixed(1).replace(".0", "")}y`;
+            }
+            if (days >= 30) {
+                const mos = days / 30;
+                return `${mos.toFixed(1).replace(".0", "")}mo`;
+            }
+            if (days >= 7) {
+                const wks = days / 7;
+                return `${wks.toFixed(1).replace(".0", "")}w`;
+            }
+            return `${days}d`;
+        };
+
+        if (min > 0 && max === Infinity) {
+            chip.textContent = `Age: >${formatAgeLabel(min)} ▾`;
+            return;
+        }
+
+        if (min === 0 && max < Infinity) {
+            chip.textContent = `Age: <${formatAgeLabel(max)} ▾`;
+            return;
+        }
+
+        chip.textContent = `Age: ${formatAgeLabel(min)}-${formatAgeLabel(max)} ▾`;
     },
 
     wireEvents(input, clearBtn, watchedChip, durationChip, viewsChip, ageChip, clearAllBtn, enqueueAllBtn) {
@@ -2359,7 +2398,8 @@ const UIBuilder = {
         input.addEventListener("keydown", (e) => {
             if (e.key === "Enter") {
                 input.blur();
-            } else if (e.key === "Escape") {
+            }
+            if (e.key === "Escape") {
                 input.value = "";
                 State.filters.text.reset();
                 clearBtn.style.visibility = "hidden";
@@ -2510,22 +2550,23 @@ const AppObserver = {
         const controlsWrapper = chipBar.querySelector(`.${CONFIG.CLASSES.CONTROLS_WRAPPER}`);
         if (!controlsWrapper) {
             UIBuilder.build(chipBar);
-        } else {
-            // Only perform query if mutations actually contain nodes added/removed to avoid redundant queries
-            let hasCardMutation = false;
-            for (let i = 0; i < mutations.length; i++) {
-                if (mutations[i].addedNodes.length > 0 || mutations[i].removedNodes.length > 0) {
-                    hasCardMutation = true;
-                    break;
-                }
-            }
+            return;
+        }
 
-            if (hasCardMutation) {
-                const currentCardCount = document.querySelectorAll(CONFIG.SELECTORS.VIDEO_CARD).length;
-                if (currentCardCount !== State.lastCardCount) {
-                    State.lastCardCount = currentCardCount;
-                    FilterEngine.apply();
-                }
+        // Only perform query if mutations actually contain nodes added/removed to avoid redundant queries
+        let hasCardMutation = false;
+        for (let i = 0; i < mutations.length; i++) {
+            if (mutations[i].addedNodes.length > 0 || mutations[i].removedNodes.length > 0) {
+                hasCardMutation = true;
+                break;
+            }
+        }
+
+        if (hasCardMutation) {
+            const currentCardCount = document.querySelectorAll(CONFIG.SELECTORS.VIDEO_CARD).length;
+            if (currentCardCount !== State.lastCardCount) {
+                State.lastCardCount = currentCardCount;
+                FilterEngine.apply();
             }
         }
     },
