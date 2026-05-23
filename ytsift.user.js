@@ -556,7 +556,7 @@ const LANGUAGE_RULES = {
     },
 };
 
-const DOMUtils = {
+const DOMRenderer = {
     // SVG nodes created programmatically to comply with Trusted Types CSP
     createSvgIcon(pathD) {
         const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -636,8 +636,10 @@ const DOMUtils = {
         chip.setAttribute("aria-pressed", pressed ? "true" : "false");
         return chip;
     },
+};
 
-    parseDuration(durationStr) {
+const DurationParser = {
+    parse(durationStr) {
         if (!durationStr) return 0;
         const cleanStr = durationStr.replace(/[^\d:]/g, "");
         const parts = cleanStr.split(":").map(Number);
@@ -651,105 +653,9 @@ const DOMUtils = {
         }
         return seconds;
     },
+};
 
-    getCardData(card) {
-        if (!card) return null;
-        return card.data || card.__data || null;
-    },
-
-    getNestedValue(obj, path) {
-        if (!obj || !path) return undefined;
-        const parts = path.split(".");
-        let current = obj;
-        for (const part of parts) {
-            if (current == null) return undefined;
-            current = current[part];
-        }
-        return current;
-    },
-
-    getVideoTitleFromData(data) {
-        return (
-            this.getNestedValue(data, "content.lockupViewModel.metadata.lockupMetadataViewModel.title.content") ||
-            this.getNestedValue(data, "lockupViewModel.metadata.lockupMetadataViewModel.title.content")
-        );
-    },
-
-    getVideoDurationFromData(data) {
-        const overlays =
-            this.getNestedValue(data, "content.lockupViewModel.contentImage.thumbnailViewModel.overlays") ||
-            this.getNestedValue(data, "lockupViewModel.contentImage.thumbnailViewModel.overlays");
-        if (Array.isArray(overlays)) {
-            for (const overlay of overlays) {
-                const timeStatus = overlay.thumbnailOverlayTimeStatusRenderer;
-                if (timeStatus) {
-                    const content = this.getNestedValue(timeStatus, "text.content");
-                    if (content) return content;
-                }
-                const bottomOverlay = overlay.thumbnailBottomOverlayViewModel;
-                if (bottomOverlay && Array.isArray(bottomOverlay.badges)) {
-                    for (const badge of bottomOverlay.badges) {
-                        const badgeModel = badge.thumbnailBadgeViewModel;
-                        if (badgeModel && badgeModel.text) {
-                            return badgeModel.text;
-                        }
-                    }
-                }
-            }
-        }
-        return undefined;
-    },
-
-    getVideoWatchedFromData(data) {
-        const overlays =
-            this.getNestedValue(data, "content.lockupViewModel.contentImage.thumbnailViewModel.overlays") ||
-            this.getNestedValue(data, "lockupViewModel.contentImage.thumbnailViewModel.overlays");
-        if (Array.isArray(overlays)) {
-            for (const overlay of overlays) {
-                const pb = this.getNestedValue(overlay, "thumbnailBottomOverlayViewModel.progressBar.thumbnailOverlayProgressBarViewModel");
-                if (pb) {
-                    return true;
-                }
-                if (overlay.thumbnailOverlayProgressBarRenderer) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    },
-
-    getVideoViewsPartFromData(data) {
-        const metadataParts = [];
-
-        const partsA =
-            this.getNestedValue(data, "content.lockupViewModel.metadata.lockupMetadataViewModel.metadataLine.metadataParts") ||
-            this.getNestedValue(data, "lockupViewModel.metadata.lockupMetadataViewModel.metadataLine.metadataParts");
-        if (Array.isArray(partsA)) {
-            metadataParts.push(...partsA);
-        }
-
-        const rowsB =
-            this.getNestedValue(data, "content.lockupViewModel.metadata.lockupMetadataViewModel.metadata.contentMetadataViewModel.metadataRows") ||
-            this.getNestedValue(data, "lockupViewModel.metadata.lockupMetadataViewModel.metadata.contentMetadataViewModel.metadataRows");
-        if (Array.isArray(rowsB)) {
-            for (const row of rowsB) {
-                if (Array.isArray(row.metadataParts)) {
-                    metadataParts.push(...row.metadataParts);
-                }
-            }
-        }
-
-        for (const part of metadataParts) {
-            const text = this.getNestedValue(part, "text.content");
-            const label = this.getNestedValue(part, "text.accessibility.accessibilityData.label");
-            const combined = `${text || ""} ${label || ""}`.toLowerCase();
-            if (combined.includes("view") || combined.includes("visualiza") || combined.includes("vista") || combined.includes("assist")) {
-                return part;
-            }
-        }
-        return undefined;
-    },
-
+const ViewsParser = {
     parsePlainNumber(numStr) {
         const clean = numStr.trim();
         if (!clean) return NaN;
@@ -819,6 +725,106 @@ const DOMUtils = {
     parseViews(viewsStr) {
         const val = this.parseViewsWithRules(viewsStr);
         return Number.isNaN(val) ? 0 : val;
+    },
+};
+
+const DataModelResolver = {
+    getCardData(card) {
+        if (!card) return null;
+        return card.data || card.__data || null;
+    },
+
+    getNestedValue(obj, path) {
+        if (!obj || !path) return undefined;
+        const parts = path.split(".");
+        let current = obj;
+        for (const part of parts) {
+            if (current == null) return undefined;
+            current = current[part];
+        }
+        return current;
+    },
+
+    getVideoTitle(data) {
+        return (
+            this.getNestedValue(data, "content.lockupViewModel.metadata.lockupMetadataViewModel.title.content") ||
+            this.getNestedValue(data, "lockupViewModel.metadata.lockupMetadataViewModel.title.content")
+        );
+    },
+
+    getVideoDuration(data) {
+        const overlays =
+            this.getNestedValue(data, "content.lockupViewModel.contentImage.thumbnailViewModel.overlays") ||
+            this.getNestedValue(data, "lockupViewModel.contentImage.thumbnailViewModel.overlays");
+        if (Array.isArray(overlays)) {
+            for (const overlay of overlays) {
+                const timeStatus = overlay.thumbnailOverlayTimeStatusRenderer;
+                if (timeStatus) {
+                    const content = this.getNestedValue(timeStatus, "text.content");
+                    if (content) return content;
+                }
+                const bottomOverlay = overlay.thumbnailBottomOverlayViewModel;
+                if (bottomOverlay && Array.isArray(bottomOverlay.badges)) {
+                    for (const badge of bottomOverlay.badges) {
+                        const badgeModel = badge.thumbnailBadgeViewModel;
+                        if (badgeModel && badgeModel.text) {
+                            return badgeModel.text;
+                        }
+                    }
+                }
+            }
+        }
+        return undefined;
+    },
+
+    getVideoWatched(data) {
+        const overlays =
+            this.getNestedValue(data, "content.lockupViewModel.contentImage.thumbnailViewModel.overlays") ||
+            this.getNestedValue(data, "lockupViewModel.contentImage.thumbnailViewModel.overlays");
+        if (Array.isArray(overlays)) {
+            for (const overlay of overlays) {
+                const pb = this.getNestedValue(overlay, "thumbnailBottomOverlayViewModel.progressBar.thumbnailOverlayProgressBarViewModel");
+                if (pb) {
+                    return true;
+                }
+                if (overlay.thumbnailOverlayProgressBarRenderer) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    },
+
+    getVideoViewsPart(data) {
+        const metadataParts = [];
+
+        const partsA =
+            this.getNestedValue(data, "content.lockupViewModel.metadata.lockupMetadataViewModel.metadataLine.metadataParts") ||
+            this.getNestedValue(data, "lockupViewModel.metadata.lockupMetadataViewModel.metadataLine.metadataParts");
+        if (Array.isArray(partsA)) {
+            metadataParts.push(...partsA);
+        }
+
+        const rowsB =
+            this.getNestedValue(data, "content.lockupViewModel.metadata.lockupMetadataViewModel.metadata.contentMetadataViewModel.metadataRows") ||
+            this.getNestedValue(data, "lockupViewModel.metadata.lockupMetadataViewModel.metadata.contentMetadataViewModel.metadataRows");
+        if (Array.isArray(rowsB)) {
+            for (const row of rowsB) {
+                if (Array.isArray(row.metadataParts)) {
+                    metadataParts.push(...row.metadataParts);
+                }
+            }
+        }
+
+        for (const part of metadataParts) {
+            const text = this.getNestedValue(part, "text.content");
+            const label = this.getNestedValue(part, "text.accessibility.accessibilityData.label");
+            const combined = `${text || ""} ${label || ""}`.toLowerCase();
+            if (combined.includes("view") || combined.includes("visualiza") || combined.includes("vista") || combined.includes("assist")) {
+                return part;
+            }
+        }
+        return undefined;
     },
 };
 
@@ -903,7 +909,7 @@ const PopoverManager = {
         const inputsRow = document.createElement("div");
         inputsRow.className = "ytsift-popover-inputs-row";
 
-        const minSpinner = DOMUtils.createNumberSpinner("ytsift-popover-duration-min", "Min", "Minimum duration in minutes");
+        const minSpinner = DOMRenderer.createNumberSpinner("ytsift-popover-duration-min", "Min", "Minimum duration in minutes");
         const minInput = minSpinner.input;
 
         const labelMin = document.createElement("span");
@@ -912,7 +918,7 @@ const PopoverManager = {
         const hyphen = document.createElement("span");
         hyphen.textContent = "-";
 
-        const maxSpinner = DOMUtils.createNumberSpinner("ytsift-popover-duration-max", "Max", "Maximum duration in minutes");
+        const maxSpinner = DOMRenderer.createNumberSpinner("ytsift-popover-duration-max", "Max", "Maximum duration in minutes");
         const maxInput = maxSpinner.input;
 
         const labelMax = document.createElement("span");
@@ -1019,8 +1025,8 @@ const PopoverManager = {
         const handleUpdate = () => {
             const minStr = minInput.value.trim();
             const maxStr = maxInput.value.trim();
-            const minVal = minStr ? DOMUtils.parseViews(minStr) : 0;
-            const maxVal = maxStr ? DOMUtils.parseViews(maxStr) : Infinity;
+            const minVal = minStr ? ViewsParser.parseViews(minStr) : 0;
+            const maxVal = maxStr ? ViewsParser.parseViews(maxStr) : Infinity;
 
             State.views.min = minVal;
             State.views.max = maxVal;
@@ -1108,14 +1114,14 @@ const FilterEngine = {
         }
 
         cards.forEach((card) => {
-            const cardData = DOMUtils.getCardData(card);
+            const cardData = DataModelResolver.getCardData(card);
 
             // Static video title is cached on the DOM node for performance
             let title = card.__ytsift_title;
             if (title === undefined) {
                 let resolvedTitle = "";
                 if (cardData) {
-                    resolvedTitle = DOMUtils.getVideoTitleFromData(cardData);
+                    resolvedTitle = DataModelResolver.getVideoTitle(cardData);
                 }
                 if (!resolvedTitle) {
                     const titleEl = card.querySelector(CONFIG.SELECTORS.VIDEO_TITLE);
@@ -1130,13 +1136,13 @@ const FilterEngine = {
             if (durationSec === undefined) {
                 let durationStr = "";
                 if (cardData) {
-                    durationStr = DOMUtils.getVideoDurationFromData(cardData);
+                    durationStr = DataModelResolver.getVideoDuration(cardData);
                 }
                 if (!durationStr) {
                     const durationEl = card.querySelector(CONFIG.SELECTORS.VIDEO_DURATION);
                     durationStr = durationEl ? durationEl.textContent.trim() : "";
                 }
-                durationSec = DOMUtils.parseDuration(durationStr);
+                durationSec = DurationParser.parse(durationStr);
                 card.__ytsift_duration_sec = durationSec;
             }
 
@@ -1146,19 +1152,19 @@ const FilterEngine = {
                 let parsed = NaN;
 
                 if (cardData) {
-                    const viewsPart = DOMUtils.getVideoViewsPartFromData(cardData);
+                    const viewsPart = DataModelResolver.getVideoViewsPart(cardData);
                     if (viewsPart) {
-                        const shortText = DOMUtils.getNestedValue(viewsPart, "text.content");
-                        const longText = DOMUtils.getNestedValue(viewsPart, "text.accessibility.accessibilityData.label");
+                        const shortText = DataModelResolver.getNestedValue(viewsPart, "text.content");
+                        const longText = DataModelResolver.getNestedValue(viewsPart, "text.accessibility.accessibilityData.label");
 
                         // 1. Try short text first
                         if (shortText) {
-                            parsed = DOMUtils.parseViewsWithRules(shortText);
+                            parsed = ViewsParser.parseViewsWithRules(shortText);
                         }
 
                         // 2. If short text fails, try long text
                         if (Number.isNaN(parsed) && longText) {
-                            parsed = DOMUtils.parseViewsWithRules(longText);
+                            parsed = ViewsParser.parseViewsWithRules(longText);
                         }
                     }
                 }
@@ -1175,14 +1181,16 @@ const FilterEngine = {
                         }
                     }
                     if (domViewsStr) {
-                        parsed = DOMUtils.parseViewsWithRules(domViewsStr);
+                        parsed = ViewsParser.parseViewsWithRules(domViewsStr);
                     }
                 }
 
                 // 4. If all fail, display warning in console and default to 0
                 if (Number.isNaN(parsed)) {
-                    const shortText = cardData ? DOMUtils.getNestedValue(DOMUtils.getVideoViewsPartFromData(cardData), "text.content") : "N/A";
-                    const longText = cardData ? DOMUtils.getNestedValue(DOMUtils.getVideoViewsPartFromData(cardData), "text.accessibility.accessibilityData.label") : "N/A";
+                    const shortText = cardData ? DataModelResolver.getNestedValue(DataModelResolver.getVideoViewsPart(cardData), "text.content") : "N/A";
+                    const longText = cardData
+                        ? DataModelResolver.getNestedValue(DataModelResolver.getVideoViewsPart(cardData), "text.accessibility.accessibilityData.label")
+                        : "N/A";
                     console.warn(`[ytsift] Failed to parse views for video: "${title}". Short: "${shortText}", Long: "${longText}", DOM: "${domViewsStr}"`);
                     parsed = 0;
                 }
@@ -1192,7 +1200,7 @@ const FilterEngine = {
             }
 
             // Watched status must be queried dynamically to reflect live watch state changes
-            const isWatched = (cardData ? DOMUtils.getVideoWatchedFromData(cardData) : false) || card.querySelector(CONFIG.SELECTORS.VIDEO_WATCHED) !== null;
+            const isWatched = (cardData ? DataModelResolver.getVideoWatched(cardData) : false) || card.querySelector(CONFIG.SELECTORS.VIDEO_WATCHED) !== null;
 
             let textMatch = true;
             if (positiveWords.length > 0 || negativeWords.length > 0) {
@@ -1286,7 +1294,7 @@ const UIBuilder = {
         const searchIconSpan = document.createElement("span");
         searchIconSpan.className = CONFIG.CLASSES.SEARCH_ICON;
         searchIconSpan.appendChild(
-            DOMUtils.createSvgIcon(
+            DOMRenderer.createSvgIcon(
                 "M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z",
             ),
         );
@@ -1300,14 +1308,14 @@ const UIBuilder = {
 
         const clearBtn = document.createElement("button");
         clearBtn.className = CONFIG.CLASSES.CLEAR_BTN;
-        clearBtn.appendChild(DOMUtils.createSvgIcon("M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"));
+        clearBtn.appendChild(DOMRenderer.createSvgIcon("M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"));
         clearBtn.setAttribute("aria-label", "Clear search");
 
         searchContainer.appendChild(searchIconSpan);
         searchContainer.appendChild(input);
         searchContainer.appendChild(clearBtn);
 
-        const watchedChip = DOMUtils.createChip({ id: "ytsift-chip-watched", text: "Unwatched", pressed: State.hideWatched });
+        const watchedChip = DOMRenderer.createChip({ id: "ytsift-chip-watched", text: "Unwatched", pressed: State.hideWatched });
 
         secGeneral.appendChild(searchContainer);
         secGeneral.appendChild(watchedChip);
@@ -1322,7 +1330,7 @@ const UIBuilder = {
         const secDuration = document.createElement("div");
         secDuration.className = "ytsift-section-duration";
 
-        const durationChip = DOMUtils.createChip({ id: "ytsift-chip-duration", text: "Duration ▾", pressed: State.duration.preset !== null });
+        const durationChip = DOMRenderer.createChip({ id: "ytsift-chip-duration", text: "Duration ▾", pressed: State.duration.preset !== null });
         secDuration.appendChild(durationChip);
         wrapper.appendChild(secDuration);
 
@@ -1335,7 +1343,7 @@ const UIBuilder = {
         const secViews = document.createElement("div");
         secViews.className = "ytsift-section-views";
 
-        const viewsChip = DOMUtils.createChip({ id: "ytsift-chip-views", text: "Views ▾", pressed: State.views.active });
+        const viewsChip = DOMRenderer.createChip({ id: "ytsift-chip-views", text: "Views ▾", pressed: State.views.active });
         secViews.appendChild(viewsChip);
         wrapper.appendChild(secViews);
 
