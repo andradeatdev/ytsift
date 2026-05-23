@@ -10,6 +10,8 @@
 
 A lightweight userscript that adds keyword search, duration, views, and watch-state filters directly to YouTube channel pages. It also lets you batch-enqueue visible videos into your watch queue.
 
+![ytsift preview](./images/preview.png)
+
 ---
 
 ### Heads up: How it works (and why it's slow)
@@ -38,7 +40,7 @@ This script runs entirely in your browser. It doesn't query a custom backend —
    * [Violentmonkey](https://violentmonkey.github.io/) (Recommended)
    * [Tampermonkey](https://www.tampermonkey.net/)
    * [Firemonkey](https://addons.mozilla.org/firefox/addon/firemonkey/)
-2. Click here to install: **[ytsift.user.js](ytsift.user.js?raw=1)**
+2. Click here to install: **[ytsift.user.js](./ytsift.user.js?raw=1)**
 
 ## Local Development
 
@@ -46,11 +48,22 @@ This script runs entirely in your browser. It doesn't query a custom backend —
    ```bash
    git clone https://github.com/your-username/ytsift.git
    ```
-2. Enable "Allow access to file URLs" in your userscript manager's extension settings so you can test changes locally.
-3. Lint and format using [Biome](https://biomejs.dev/):
+2. Install dependencies:
    ```bash
-   npx @biomejs/biome format ytsift.user.js --write
-   npx @biomejs/biome lint ytsift.user.js
+   pnpm install
+   ```
+3. Enable "Allow access to file URLs" in your userscript manager's extension settings so you can test changes locally.
+4. Build the userscript:
+   ```bash
+   pnpm build
+   ```
+   For automatic rebuilds while editing:
+   ```bash
+   pnpm build:watch
+   ```
+5. Validate the project:
+   ```bash
+   pnpm validate
    ```
 
 ## License

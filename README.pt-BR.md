@@ -10,6 +10,8 @@
 
 Um userscript leve que adiciona filtros de busca por palavra-chave, duração, visualizações e status de reprodução diretamente nas páginas de canais do YouTube. Ele também permite adicionar os vídeos filtrados na sua fila em lote.
 
+![Visualização do ytsift](./images/preview.png)
+
 ---
 
 ### Importante: Como funciona (e por que é lento)
@@ -38,7 +40,7 @@ Este script roda inteiramente no seu navegador. Ele não consulta um servidor cu
    * [Violentmonkey](https://violentmonkey.github.io/) (Recomendado)
    * [Tampermonkey](https://www.tampermonkey.net/)
    * [Firemonkey](https://addons.mozilla.org/firefox/addon/firemonkey/)
-2. Clique aqui para instalar: **[ytsift.user.js](ytsift.user.js?raw=1)**
+2. Clique aqui para instalar: **[ytsift.user.js](./ytsift.user.js?raw=1)**
 
 ## Desenvolvimento Local
 
@@ -46,11 +48,22 @@ Este script roda inteiramente no seu navegador. Ele não consulta um servidor cu
    ```bash
    git clone https://github.com/seu-usuario/ytsift.git
    ```
-2. Ative a opção "Permitir acesso aos URLs do arquivo" nas configurações de extensão do seu gerenciador para testar alterações locais na hora.
-3. Formate e valide o código com o [Biome](https://biomejs.dev/):
+2. Instale as dependências:
    ```bash
-   npx @biomejs/biome format ytsift.user.js --write
-   npx @biomejs/biome lint ytsift.user.js
+   pnpm install
+   ```
+3. Ative a opção "Permitir acesso aos URLs do arquivo" nas configurações de extensão do seu gerenciador para testar alterações locais na hora.
+4. Gere o userscript:
+   ```bash
+   pnpm build
+   ```
+   Para rebuild automático enquanto edita:
+   ```bash
+   pnpm build:watch
+   ```
+5. Valide o projeto:
+   ```bash
+   pnpm validate
    ```
 
 ## Licença
