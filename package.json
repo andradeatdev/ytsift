@@ -2,32 +2,41 @@
   "name": "ytsift",
   "version": "1.0.0",
   "description": "YouTube channel video filter userscript",
+  "type": "module",
   "packageManager": "pnpm@10.33.2",
   "main": "ytsift.user.js",
   "scripts": {
-    "format": "biome format ytsift.user.js --write",
-    "lint:biome": "biome lint ytsift.user.js",
+    "build": "node scripts/build.mjs",
+    "build:watch": "node --watch-path=src scripts/build.mjs",
+    "format": "biome format src/ --write",
+    "lint:src": "biome lint src/",
     "lint:metadata": "eslint ytsift.user.js",
-    "lint": "pnpm lint:biome && pnpm lint:metadata",
-    "build": "tsc",
+    "lint": "pnpm lint:src && pnpm lint:metadata",
     "prepare": "husky"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.8.0",
-    "eslint": "^8.57.0",
+    "@biomejs/biome": "^2.4.15",
+    "@eslint/eslintrc": "^3.3.5",
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.4.0",
     "eslint-plugin-userscripts": "^0.5.6",
-    "husky": "^9.0.11",
-    "lint-staged": "^15.2.2",
-    "typescript": "^5.4.5"
+    "globals": "^17.6.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.5",
+    "typescript": "^6.0.3"
   },
   "lint-staged": {
-    "ytsift.user.js": [
+    "src/**/*.js": [
       "biome format --write",
-      "biome lint",
+      "biome lint"
+    ],
+    "ytsift.user.js": [
       "eslint"
     ]
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["@biomejs/biome"]
+    "onlyBuiltDependencies": [
+      "@biomejs/biome"
+    ]
   }
 }

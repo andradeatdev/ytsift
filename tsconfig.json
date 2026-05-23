@@ -6,12 +6,11 @@
     "strict": true,
     "allowJs": true,
     "checkJs": false,
-    "removeComments": false,
-    "rootDir": "src",
-    "outDir": "dist",
+    "noEmit": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true
   },
-  "include": ["src/**/*"]
+  "include": ["ytsift.user.js"],
+  "exclude": ["dist", "node_modules"]
 }
