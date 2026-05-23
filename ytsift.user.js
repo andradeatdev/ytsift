@@ -380,6 +380,27 @@ const StyleManager = {
                 background-color: var(--ytsift-hover-bg);
             }
 
+            .ytsift-enqueue-all-btn {
+                border: none;
+                background: transparent;
+                color: var(--yt-sys-color-baseline--call-to-action, #3ea6ff);
+                cursor: pointer;
+                font-family: "Roboto", "Arial", sans-serif;
+                font-size: 0.93em; /* 13px */
+                font-weight: 500;
+                margin-left: 0.57em; /* 8px */
+                padding: 0 0.29em; /* 4px */
+                height: var(--ytsift-chip-height);
+                display: inline-flex;
+                align-items: center;
+                border-radius: 4px;
+                transition: background-color 0.2s, opacity 0.2s;
+            }
+
+            .ytsift-enqueue-all-btn:hover:not(:disabled) {
+                background-color: var(--ytsift-hover-bg);
+            }
+
             .ytsift-popover-slider-container {
                 display: flex;
                 flex-direction: column;
@@ -987,6 +1008,29 @@ const DataModelResolver = {
             }
         }
         return undefined;
+    },
+
+    getVideoId(data, card) {
+        if (data) {
+            const path1 = "content.lockupViewModel.contentImage.thumbnailViewModel.videoThumbnailCommand.watchEndpoint.videoId";
+            const path2 = "lockupViewModel.contentImage.thumbnailViewModel.videoThumbnailCommand.watchEndpoint.videoId";
+            const path3 = "content.lockupViewModel.metadata.lockupMetadataViewModel.title.command.watchEndpoint.videoId";
+            const path4 = "lockupViewModel.metadata.lockupMetadataViewModel.title.command.watchEndpoint.videoId";
+            const id = this.getNestedValue(data, path1) || 
+                       this.getNestedValue(data, path2) || 
+                       this.getNestedValue(data, path3) || 
+                       this.getNestedValue(data, path4);
+            if (id) return id;
+        }
+
+        // DOM fallback
+        const anchor = card.querySelector("a[href*='/watch?v=']");
+        if (anchor) {
+            const href = anchor.getAttribute("href");
+            const match = href.match(/[?&]v=([^&#]+)/);
+            if (match) return match[1];
+        }
+        return null;
     },
 };
 
@@ -1936,6 +1980,89 @@ const FilterEngine = {
     },
 };
 
+const QueueManager = {
+    enqueueVideo(videoId) {
+        const targetWindow = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
+        const ytdApp = targetWindow.document.querySelector("ytd-app");
+        if (!ytdApp) {
+            console.error("[ytsift] Element ytd-app not found.");
+            return false;
+        }
+
+        const commandExecutor = ytdApp.resolveCommand || (ytdApp.__data__ && ytdApp.__data__.commandExecutor);
+        const apiService = ytdApp.apiService_ || (ytdApp.services_ && ytdApp.services_.api);
+
+        const actionPayload = {
+            clickTrackingParams: "CMQBEPBbIhMI4anqme3PlAMVZrqVAh0TaiGqygEEl8RGWA==",
+            addToPlaylistCommand: {
+                openMiniplayer: true,
+                videoId: videoId,
+                listType: "PLAYLIST_EDIT_LIST_TYPE_QUEUE",
+                onCreateListCommand: {
+                    clickTrackingParams: "CMQBEPBbIhMI4anqme3PlAMVZrqVAh0TaiGqygEEl8RGWA==",
+                    commandMetadata: {
+                        webCommandMetadata: { sendPost: true, apiUrl: "/youtubei/v1/playlist/create" }
+                    },
+                    createPlaylistServiceEndpoint: { videoIds: [videoId], params: "CAQ%3D" }
+                },
+                videoIds: [videoId],
+                videoCommand: {
+                    clickTrackingParams: "CMQBEPBbIhMI4anqme3PlAMVZrqVAh0TaiGqygEEl8RGWA==",
+                    commandMetadata: {
+                        webCommandMetadata: { url: `/watch?v=${videoId}`, webPageType: "WEB_PAGE_TYPE_WATCH", rootVe: 3832 }
+                    },
+                    watchEndpoint: { videoId: videoId }
+                }
+            }
+        };
+
+        if (typeof commandExecutor === "function") {
+            try {
+                commandExecutor.call(ytdApp, {
+                    signalServiceEndpoint: {
+                        signal: "CLIENT_SIGNAL",
+                        actions: [actionPayload]
+                    }
+                });
+                console.log(`[ytsift] Native command executed for video: ${videoId}`);
+                return true;
+            } catch (e) {
+                console.warn("[ytsift] Native commandExecutor failed, trying apiService...", e);
+            }
+        }
+
+        if (apiService && typeof apiService.executeServiceAction === "function") {
+            try {
+                apiService.executeServiceAction({
+                    actionName: "yt-service-request-action",
+                    args: [actionPayload, ytdApp]
+                });
+                console.log(`[ytsift] API service executed for video: ${videoId}`);
+                return true;
+            } catch (e) {
+                console.error("[ytsift] API service execution failed.", e);
+            }
+        }
+
+        return false;
+    },
+
+    getVisibleVideoIds() {
+        const cards = document.querySelectorAll(CONFIG.SELECTORS.VIDEO_CARD);
+        const ids = new Set();
+        cards.forEach((card) => {
+            if (!card.classList.contains(CONFIG.CLASSES.HIDDEN)) {
+                const data = DataModelResolver.getCardData(card);
+                const id = DataModelResolver.getVideoId(data, card);
+                if (id) {
+                    ids.add(id);
+                }
+            }
+        });
+        return Array.from(ids);
+    }
+};
+
 const FetchInterceptor = {
     install() {
         const targetWindow = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
@@ -2065,12 +2192,18 @@ const UIBuilder = {
         clearAllBtn.className = "ytsift-clear-all-btn";
         clearAllBtn.textContent = "Clear All";
         secActions.appendChild(clearAllBtn);
+
+        const enqueueAllBtn = document.createElement("button");
+        enqueueAllBtn.id = "ytsift-enqueue-all";
+        enqueueAllBtn.className = "ytsift-enqueue-all-btn";
+        enqueueAllBtn.textContent = "+ Queue";
+        secActions.appendChild(enqueueAllBtn);
         wrapper.appendChild(secActions);
 
         chipBar.prepend(wrapper);
         State.lastCardCount = document.querySelectorAll(CONFIG.SELECTORS.VIDEO_CARD).length;
 
-        this.wireEvents(input, clearBtn, watchedChip, durationChip, viewsChip, ageChip, clearAllBtn);
+        this.wireEvents(input, clearBtn, watchedChip, durationChip, viewsChip, ageChip, clearAllBtn, enqueueAllBtn);
         this.updateWatchedChipText();
         this.updateAgeChipText();
 
@@ -2208,7 +2341,7 @@ const UIBuilder = {
         }
     },
 
-    wireEvents(input, clearBtn, watchedChip, durationChip, viewsChip, ageChip, clearAllBtn) {
+    wireEvents(input, clearBtn, watchedChip, durationChip, viewsChip, ageChip, clearAllBtn, enqueueAllBtn) {
         input.addEventListener("input", () => {
             State.filters.text.setQuery(input.value);
             clearBtn.style.visibility = input.value.length > 0 ? "visible" : "hidden";
@@ -2293,6 +2426,30 @@ const UIBuilder = {
                 State.filters.age.max === Infinity ? "" : State.filters.age.max,
             );
             PopoverManager.showAge(ageChip);
+        });
+
+        enqueueAllBtn.addEventListener("click", async () => {
+            const videoIds = QueueManager.getVisibleVideoIds();
+            if (videoIds.length === 0) return;
+
+            enqueueAllBtn.disabled = true;
+            enqueueAllBtn.style.opacity = "0.5";
+            enqueueAllBtn.style.cursor = "not-allowed";
+
+            const total = videoIds.length;
+            for (let i = 0; i < total; i++) {
+                enqueueAllBtn.textContent = `Queuing (${i + 1}/${total})`;
+                QueueManager.enqueueVideo(videoIds[i]);
+                await new Promise((resolve) => setTimeout(resolve, 150));
+            }
+
+            enqueueAllBtn.textContent = "Done!";
+            setTimeout(() => {
+                enqueueAllBtn.textContent = "+ Queue";
+                enqueueAllBtn.disabled = false;
+                enqueueAllBtn.style.opacity = "1";
+                enqueueAllBtn.style.cursor = "pointer";
+            }, 1000);
         });
 
         clearAllBtn.addEventListener("click", () => {
