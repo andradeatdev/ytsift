@@ -585,12 +585,39 @@ class ViewsFilter extends BaseFilter {
     }
 }
 
+class AgeFilter extends BaseFilter {
+    constructor() {
+        super();
+        this.min = 0;
+        this.max = Infinity;
+    }
+
+    setRange(min, max) {
+        this.min = min;
+        this.max = max;
+        this.active = min > 0 || max < Infinity;
+    }
+
+    reset() {
+        this.min = 0;
+        this.max = Infinity;
+        this.active = false;
+    }
+
+    matches(metadata) {
+        if (!this.isActive()) return true;
+        const days = metadata.ageDays;
+        return days >= this.min && days <= this.max;
+    }
+}
+
 const State = {
     filters: {
         text: new TextFilter(),
         watched: new WatchedFilter(),
         duration: new DurationFilter(),
         views: new ViewsFilter(),
+        age: new AgeFilter(),
     },
     lastCardCount: 0,
     lastFetchTime: 0,
@@ -753,6 +780,44 @@ const ViewsParser = {
     },
 };
 
+const AgeParser = {
+    parseToDays(ageStr) {
+        if (!ageStr) return 0;
+        const clean = ageStr.toLowerCase().trim();
+
+        // Match numbers and potential time units
+        const match = clean.match(/(\d+)\s*(minute|hour|day|week|month|year|minuto|hora|dia|semana|mês|meses|ano)s?/);
+        if (!match) return 0;
+
+        const value = parseInt(match[1]);
+        const unit = match[2];
+
+        switch (unit) {
+            case "minute":
+            case "minuto":
+                return value / (24 * 60);
+            case "hour":
+            case "hora":
+                return value / 24;
+            case "day":
+            case "dia":
+                return value;
+            case "week":
+            case "semana":
+                return value * 7;
+            case "month":
+            case "mês":
+            case "meses":
+                return value * 30;
+            case "year":
+            case "ano":
+                return value * 365;
+            default:
+                return 0;
+        }
+    },
+};
+
 const DataModelResolver = {
     getCardData(card) {
         if (!card) return null;
@@ -876,15 +941,64 @@ const DataModelResolver = {
         }
         return undefined;
     },
+
+    getVideoAgePart(data) {
+        const metadataParts = [];
+
+        const partsA =
+            this.getNestedValue(data, "content.lockupViewModel.metadata.lockupMetadataViewModel.metadataLine.metadataParts") ||
+            this.getNestedValue(data, "lockupViewModel.metadata.lockupMetadataViewModel.metadataLine.metadataParts");
+        if (Array.isArray(partsA)) {
+            metadataParts.push(...partsA);
+        }
+
+        const rowsB =
+            this.getNestedValue(data, "content.lockupViewModel.metadata.lockupMetadataViewModel.metadata.contentMetadataViewModel.metadataRows") ||
+            this.getNestedValue(data, "lockupViewModel.metadata.lockupMetadataViewModel.metadata.contentMetadataViewModel.metadataRows");
+        if (Array.isArray(rowsB)) {
+            for (const row of rowsB) {
+                if (Array.isArray(row.metadataParts)) {
+                    metadataParts.push(...row.metadataParts);
+                }
+            }
+        }
+
+        for (const part of metadataParts) {
+            const text = this.getNestedValue(part, "text.content");
+            const label = this.getNestedValue(part, "text.accessibility.accessibilityData.label");
+            const combined = `${text || ""} ${label || ""}`.toLowerCase();
+            if (
+                combined.includes("ago") ||
+                combined.includes("há ") ||
+                combined.includes("minut") ||
+                combined.includes("hour") ||
+                combined.includes("hora") ||
+                combined.includes("day") ||
+                combined.includes("dia") ||
+                combined.includes("week") ||
+                combined.includes("semana") ||
+                combined.includes("month") ||
+                combined.includes("mês") ||
+                combined.includes("meses") ||
+                combined.includes("year") ||
+                combined.includes("ano")
+            ) {
+                return part;
+            }
+        }
+        return undefined;
+    },
 };
 
 const PopoverManager = {
     durationPopover: null,
     viewsPopover: null,
     watchedPopover: null,
+    agePopover: null,
     lastDurationClosedTime: 0,
     lastViewsClosedTime: 0,
     lastWatchedClosedTime: 0,
+    lastAgeClosedTime: 0,
 
     init() {
         if (this.durationPopover) return;
@@ -934,13 +1048,30 @@ const PopoverManager = {
             }
         });
 
+        this.agePopover = document.createElement("div");
+        this.agePopover.id = "ytsift-age-popover";
+        this.agePopover.className = "ytsift-popover";
+        this.agePopover.setAttribute("popover", "auto");
+        this.agePopover.addEventListener("beforetoggle", (e) => {
+            if (e.newState === "open") {
+                const trigger = document.getElementById("ytsift-chip-age");
+                if (trigger) {
+                    this.position(this.agePopover, trigger);
+                }
+            } else if (e.newState === "closed") {
+                this.lastAgeClosedTime = Date.now();
+            }
+        });
+
         document.body.appendChild(this.durationPopover);
         document.body.appendChild(this.viewsPopover);
         document.body.appendChild(this.watchedPopover);
+        document.body.appendChild(this.agePopover);
 
         this.buildDurationContent();
         this.buildViewsContent();
         this.buildWatchedContent();
+        this.buildAgeContent();
     },
 
     position(popover, target) {
@@ -1327,6 +1458,113 @@ const PopoverManager = {
         });
     },
 
+    buildAgeContent() {
+        const AGE_STEPS = [0, 1, 2, 3, 5, 7, 14, 30, 90, 180, 365, 730, 1095, Infinity];
+
+        const formatAgeValue = (days) => {
+            if (days === 0) return "0 days";
+            if (days === Infinity) return "Max";
+            if (days >= 365) {
+                const yrs = days / 365;
+                return `${yrs.toFixed(1).replace(".0", "")}y`;
+            }
+            if (days >= 30) {
+                const mos = days / 30;
+                return `${mos.toFixed(1).replace(".0", "")}mo`;
+            }
+            if (days >= 7) {
+                const wks = days / 7;
+                return `${wks.toFixed(1).replace(".0", "")}w`;
+            }
+            return `${days}d`;
+        };
+
+        const container = document.createElement("div");
+        container.className = "ytsift-popover-duration-container";
+        container.style.width = "12.31em";
+
+        const minContainer = document.createElement("div");
+        minContainer.style.display = "flex";
+        minContainer.style.flexDirection = "column";
+        minContainer.style.gap = "0.23em";
+
+        const minHeader = document.createElement("div");
+        minHeader.className = "ytsift-slider-header";
+        const minLabel = document.createElement("span");
+        minLabel.textContent = "Min Age";
+        const minValSpan = document.createElement("span");
+        minValSpan.id = "ytsift-popover-age-min-val";
+        minValSpan.textContent = "0 days";
+        minHeader.appendChild(minLabel);
+        minHeader.appendChild(minValSpan);
+
+        const minSlider = document.createElement("input");
+        minSlider.id = "ytsift-popover-age-min-slider";
+        minSlider.className = "ytsift-slider";
+        minSlider.type = "range";
+        minSlider.min = "0";
+        minSlider.max = (AGE_STEPS.length - 1).toString();
+        minSlider.step = "1";
+        minSlider.value = "0";
+
+        minContainer.appendChild(minHeader);
+        minContainer.appendChild(minSlider);
+
+        const maxContainer = document.createElement("div");
+        maxContainer.style.display = "flex";
+        maxContainer.style.flexDirection = "column";
+        maxContainer.style.gap = "0.23em";
+
+        const maxHeader = document.createElement("div");
+        maxHeader.className = "ytsift-slider-header";
+        const maxLabel = document.createElement("span");
+        maxLabel.textContent = "Max Age";
+        const maxValSpan = document.createElement("span");
+        maxValSpan.id = "ytsift-popover-age-max-val";
+        maxValSpan.textContent = "Max";
+        maxHeader.appendChild(maxLabel);
+        maxHeader.appendChild(maxValSpan);
+
+        const maxSlider = document.createElement("input");
+        maxSlider.id = "ytsift-popover-age-max-slider";
+        maxSlider.className = "ytsift-slider";
+        maxSlider.type = "range";
+        maxSlider.min = "0";
+        maxSlider.max = (AGE_STEPS.length - 1).toString();
+        maxSlider.step = "1";
+        maxSlider.value = (AGE_STEPS.length - 1).toString();
+
+        maxContainer.appendChild(maxHeader);
+        maxContainer.appendChild(maxSlider);
+
+        container.appendChild(minContainer);
+        container.appendChild(maxContainer);
+        this.agePopover.appendChild(container);
+
+        const handleSliderChange = () => {
+            let minIndex = parseInt(minSlider.value);
+            let maxIndex = parseInt(maxSlider.value);
+
+            if (minIndex > maxIndex) {
+                minIndex = maxIndex;
+                minSlider.value = minIndex.toString();
+            }
+
+            const minVal = AGE_STEPS[minIndex];
+            const maxVal = AGE_STEPS[maxIndex];
+
+            minValSpan.textContent = formatAgeValue(minVal);
+            maxValSpan.textContent = formatAgeValue(maxVal);
+
+            State.filters.age.setRange(minVal, maxVal);
+            UIBuilder.updateAgeChipText();
+            FilterEngine.apply();
+        };
+
+        minSlider.addEventListener("input", handleSliderChange);
+        maxSlider.addEventListener("input", handleSliderChange);
+    },
+
     updateDurationInputs(min, max) {
         const minSlider = this.durationPopover.querySelector("#ytsift-popover-duration-min-slider");
         const maxSlider = this.durationPopover.querySelector("#ytsift-popover-duration-max-slider");
@@ -1407,6 +1645,48 @@ const PopoverManager = {
         }
     },
 
+    updateAgeInputs(min, max) {
+        const AGE_STEPS = [0, 1, 2, 3, 5, 7, 14, 30, 90, 180, 365, 730, 1095, Infinity];
+
+        const formatAgeValue = (days) => {
+            if (days === 0) return "0 days";
+            if (days === Infinity) return "Max";
+            if (days >= 365) {
+                const yrs = days / 365;
+                return `${yrs.toFixed(1).replace(".0", "")}y`;
+            }
+            if (days >= 30) {
+                const mos = days / 30;
+                return `${mos.toFixed(1).replace(".0", "")}mo`;
+            }
+            if (days >= 7) {
+                const wks = days / 7;
+                return `${wks.toFixed(1).replace(".0", "")}w`;
+            }
+            return `${days}d`;
+        };
+
+        const minSlider = this.agePopover.querySelector("#ytsift-popover-age-min-slider");
+        const maxSlider = this.agePopover.querySelector("#ytsift-popover-age-max-slider");
+        const minValSpan = this.agePopover.querySelector("#ytsift-popover-age-min-val");
+        const maxValSpan = this.agePopover.querySelector("#ytsift-popover-age-max-val");
+
+        const actualMin = min === "" ? 0 : min;
+        const actualMax = max === "" ? Infinity : max;
+
+        let minIndex = AGE_STEPS.indexOf(actualMin);
+        if (minIndex === -1) minIndex = 0;
+
+        let maxIndex = AGE_STEPS.indexOf(actualMax);
+        if (maxIndex === -1) maxIndex = AGE_STEPS.length - 1;
+
+        if (minSlider) minSlider.value = minIndex.toString();
+        if (minValSpan) minValSpan.textContent = formatAgeValue(actualMin);
+
+        if (maxSlider) maxSlider.value = maxIndex.toString();
+        if (maxValSpan) maxValSpan.textContent = formatAgeValue(actualMax);
+    },
+
     showDuration(target) {
         this.position(this.durationPopover, target);
         try {
@@ -1434,6 +1714,15 @@ const PopoverManager = {
         }
     },
 
+    showAge(target) {
+        this.position(this.agePopover, target);
+        try {
+            this.agePopover.showPopover();
+        } catch {
+            this.agePopover.style.display = "block";
+        }
+    },
+
     isDurationOpen() {
         return this.durationPopover && (this.durationPopover.matches(":popover-open") || this.durationPopover.style.display === "block");
     },
@@ -1446,15 +1735,21 @@ const PopoverManager = {
         return this.watchedPopover && (this.watchedPopover.matches(":popover-open") || this.watchedPopover.style.display === "block");
     },
 
+    isAgeOpen() {
+        return this.agePopover && (this.agePopover.matches(":popover-open") || this.agePopover.style.display === "block");
+    },
+
     hideAll() {
         try {
             this.durationPopover?.hidePopover();
             this.viewsPopover?.hidePopover();
             this.watchedPopover?.hidePopover();
+            this.agePopover?.hidePopover();
         } catch {
             if (this.durationPopover) this.durationPopover.style.display = "none";
             if (this.viewsPopover) this.viewsPopover.style.display = "none";
             if (this.watchedPopover) this.watchedPopover.style.display = "none";
+            if (this.agePopover) this.agePopover.style.display = "none";
         }
     },
 };
@@ -1550,6 +1845,65 @@ const FilterEngine = {
                 card.__ytsift_views = views;
             }
 
+            // Static age in days is cached on the DOM node to avoid redundant parsing
+            let ageDays = card.__ytsift_age_days;
+            if (ageDays === undefined) {
+                let parsed = NaN;
+
+                if (cardData) {
+                    const agePart = DataModelResolver.getVideoAgePart(cardData);
+                    if (agePart) {
+                        const shortText = DataModelResolver.getNestedValue(agePart, "text.content");
+                        const longText = DataModelResolver.getNestedValue(agePart, "text.accessibility.accessibilityData.label");
+
+                        if (shortText) {
+                            parsed = AgeParser.parseToDays(shortText);
+                        }
+                        if ((Number.isNaN(parsed) || parsed === 0) && longText) {
+                            parsed = AgeParser.parseToDays(longText);
+                        }
+                    }
+                }
+
+                // Fallback to DOM scraping if data-model parsing failed or was not available
+                let domAgeStr = "";
+                if (Number.isNaN(parsed) || parsed === 0) {
+                    const metaSpans = card.querySelectorAll(CONFIG.SELECTORS.VIDEO_VIEWS);
+                    for (let i = 0; i < metaSpans.length; i++) {
+                        const txt = metaSpans[i].textContent.toLowerCase();
+                        if (
+                            txt.includes("ago") ||
+                            txt.includes("há") ||
+                            txt.includes("minut") ||
+                            txt.includes("hour") ||
+                            txt.includes("hora") ||
+                            txt.includes("day") ||
+                            txt.includes("dia") ||
+                            txt.includes("week") ||
+                            txt.includes("semana") ||
+                            txt.includes("month") ||
+                            txt.includes("mês") ||
+                            txt.includes("meses") ||
+                            txt.includes("year") ||
+                            txt.includes("ano")
+                        ) {
+                            domAgeStr = metaSpans[i].textContent;
+                            break;
+                        }
+                    }
+                    if (domAgeStr) {
+                        parsed = AgeParser.parseToDays(domAgeStr);
+                    }
+                }
+
+                if (Number.isNaN(parsed)) {
+                    parsed = 0;
+                }
+
+                ageDays = parsed;
+                card.__ytsift_age_days = ageDays;
+            }
+
             // Watched percentage must be queried dynamically to reflect live watch state changes
             const watchedPercent = DataModelResolver.getVideoWatchedPercent(cardData, card);
 
@@ -1558,14 +1912,16 @@ const FilterEngine = {
                 durationSec,
                 views,
                 watchedPercent,
+                ageDays,
             };
 
             const textMatch = State.filters.text.matches(metadata);
             const watchedMatch = State.filters.watched.matches(metadata);
             const durationMatch = State.filters.duration.matches(metadata);
             const viewsMatch = State.filters.views.matches(metadata);
+            const ageMatch = State.filters.age.matches(metadata);
 
-            const shouldHide = !(textMatch && watchedMatch && durationMatch && viewsMatch);
+            const shouldHide = !(textMatch && watchedMatch && durationMatch && viewsMatch && ageMatch);
             card.classList.toggle(CONFIG.CLASSES.HIDDEN, shouldHide);
 
             if (!shouldHide) {
@@ -1669,7 +2025,9 @@ const UIBuilder = {
         secDuration.className = "ytsift-section-duration";
 
         const durationChip = DOMRenderer.createChip({ id: "ytsift-chip-duration", text: "Duration ▾", pressed: State.filters.duration.isActive() });
+        const ageChip = DOMRenderer.createChip({ id: "ytsift-chip-age", text: "Age ▾", pressed: State.filters.age.isActive() });
         secDuration.appendChild(durationChip);
+        secDuration.appendChild(ageChip);
         wrapper.appendChild(secDuration);
 
         // Separator 2
@@ -1712,8 +2070,9 @@ const UIBuilder = {
         chipBar.prepend(wrapper);
         State.lastCardCount = document.querySelectorAll(CONFIG.SELECTORS.VIDEO_CARD).length;
 
-        this.wireEvents(input, clearBtn, watchedChip, durationChip, viewsChip, clearAllBtn);
+        this.wireEvents(input, clearBtn, watchedChip, durationChip, viewsChip, ageChip, clearAllBtn);
         this.updateWatchedChipText();
+        this.updateAgeChipText();
 
         FilterEngine.apply();
     },
@@ -1802,7 +2161,54 @@ const UIBuilder = {
         }
     },
 
-    wireEvents(input, clearBtn, watchedChip, durationChip, viewsChip, clearAllBtn) {
+    updateAgeChipText() {
+        const chip = document.getElementById("ytsift-chip-age");
+        if (!chip) return;
+        if (!State.filters.age.isActive()) {
+            chip.textContent = "Age ▾";
+            chip.classList.remove(CONFIG.CLASSES.ACTIVE);
+            chip.setAttribute("aria-pressed", "false");
+        } else {
+            chip.classList.add(CONFIG.CLASSES.ACTIVE);
+            chip.setAttribute("aria-pressed", "true");
+            if (State.filters.age.min === 0 && State.filters.age.max === Infinity) {
+                chip.textContent = "Age ▾";
+                chip.classList.remove(CONFIG.CLASSES.ACTIVE);
+                chip.setAttribute("aria-pressed", "false");
+                State.filters.age.reset();
+            } else {
+                const formatAgeLabel = (days) => {
+                    if (days === 0) return "0d";
+                    if (days === Infinity) return "Max";
+                    if (days >= 365) {
+                        const yrs = days / 365;
+                        return `${yrs.toFixed(1).replace(".0", "")}y`;
+                    }
+                    if (days >= 30) {
+                        const mos = days / 30;
+                        return `${mos.toFixed(1).replace(".0", "")}mo`;
+                    }
+                    if (days >= 7) {
+                        const wks = days / 7;
+                        return `${wks.toFixed(1).replace(".0", "")}w`;
+                    }
+                    return `${days}d`;
+                };
+
+                let label = "";
+                if (State.filters.age.min > 0 && State.filters.age.max === Infinity) {
+                    label = `>${formatAgeLabel(State.filters.age.min)}`;
+                } else if (State.filters.age.min === 0 && State.filters.age.max < Infinity) {
+                    label = `<${formatAgeLabel(State.filters.age.max)}`;
+                } else {
+                    label = `${formatAgeLabel(State.filters.age.min)}-${formatAgeLabel(State.filters.age.max)}`;
+                }
+                chip.textContent = `Age: ${label} ▾`;
+            }
+        }
+    },
+
+    wireEvents(input, clearBtn, watchedChip, durationChip, viewsChip, ageChip, clearAllBtn) {
         input.addEventListener("input", () => {
             State.filters.text.setQuery(input.value);
             clearBtn.style.visibility = input.value.length > 0 ? "visible" : "hidden";
@@ -1874,6 +2280,21 @@ const UIBuilder = {
             PopoverManager.showViews(viewsChip);
         });
 
+        ageChip.addEventListener("click", () => {
+            const wasJustClosed = Date.now() - PopoverManager.lastAgeClosedTime < 150;
+            PopoverManager.hideAll();
+
+            if (wasJustClosed) {
+                return;
+            }
+
+            PopoverManager.updateAgeInputs(
+                !State.filters.age.isActive() ? "" : State.filters.age.min,
+                State.filters.age.max === Infinity ? "" : State.filters.age.max,
+            );
+            PopoverManager.showAge(ageChip);
+        });
+
         clearAllBtn.addEventListener("click", () => {
             input.value = "";
             clearBtn.style.visibility = "hidden";
@@ -1887,10 +2308,14 @@ const UIBuilder = {
             viewsChip.classList.remove(CONFIG.CLASSES.ACTIVE);
             viewsChip.setAttribute("aria-pressed", "false");
 
+            ageChip.classList.remove(CONFIG.CLASSES.ACTIVE);
+            ageChip.setAttribute("aria-pressed", "false");
+
             PopoverManager.hideAll();
             PopoverManager.updateDurationInputs("", "");
             PopoverManager.updateViewsInputs("", "");
             PopoverManager.updateWatchedInputs("all", 10);
+            PopoverManager.updateAgeInputs("", "");
 
             const btnShort = PopoverManager.durationPopover.querySelector("#ytsift-popover-preset-short");
             const btnMedium = PopoverManager.durationPopover.querySelector("#ytsift-popover-preset-medium");
@@ -1903,6 +2328,7 @@ const UIBuilder = {
             this.updateDurationChipText();
             this.updateViewsChipText();
             this.updateWatchedChipText();
+            this.updateAgeChipText();
             FilterEngine.apply();
         });
     },
