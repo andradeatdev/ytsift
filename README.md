@@ -46,7 +46,7 @@ This script runs entirely in your browser. It doesn't query a custom backend —
 
 1. Clone the repo:
    ```bash
-   git clone https://github.com/your-username/ytsift.git
+   git clone https://github.com/andradeatdev/ytsift.git
    ```
 2. Install dependencies:
    ```bash

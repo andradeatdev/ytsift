@@ -46,7 +46,7 @@ Este script roda inteiramente no seu navegador. Ele não consulta um servidor cu
 
 1. Clone o repositório:
    ```bash
-   git clone https://github.com/seu-usuario/ytsift.git
+   git clone https://github.com/andradeatdev/ytsift.git
    ```
 2. Instale as dependências:
    ```bash
