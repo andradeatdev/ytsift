@@ -1,8 +1,8 @@
-import { AgeFilter } from "../filters/age.js";
-import { DurationFilter } from "../filters/duration.js";
-import { TextFilter } from "../filters/text.js";
-import { ViewsFilter } from "../filters/views.js";
-import { WatchedFilter } from "../filters/watched.js";
+import { AgeFilter } from "@/filters/age.js";
+import { DurationFilter } from "@/filters/duration.js";
+import { TextFilter } from "@/filters/text.js";
+import { ViewsFilter } from "@/filters/views.js";
+import { WatchedFilter } from "@/filters/watched.js";
 
 export const State = {
 	filters: {

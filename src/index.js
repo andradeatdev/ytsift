@@ -1,3 +1,3 @@
-import { App } from "./core/app-observer.js";
+import { App } from "@/core/app-observer.js";
 
 App.init();

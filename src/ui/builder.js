@@ -1,9 +1,9 @@
-import { CONFIG } from "../config.js";
-import { FilterEngine } from "../core/filter-engine.js";
-import { State } from "../core/state.js";
-import { DOMRenderer } from "../dom/renderer.js";
-import { QueueManager } from "../queue/queue-manager.js";
-import { PopoverManager } from "./popover-manager.js";
+import { CONFIG } from "@/config.js";
+import { FilterEngine } from "@/core/filter-engine.js";
+import { State } from "@/core/state.js";
+import { DOMRenderer } from "@/dom/renderer.js";
+import { QueueManager } from "@/queue/queue-manager.js";
+import { PopoverManager } from "@/ui/popover-manager.js";
 
 export const UIBuilder = {
 	build(chipBar) {

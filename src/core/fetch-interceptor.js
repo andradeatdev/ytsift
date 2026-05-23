@@ -1,5 +1,5 @@
-import { CONFIG } from "../config.js";
-import { State } from "./state.js";
+import { CONFIG } from "@/config.js";
+import { State } from "@/core/state.js";
 
 export const FetchInterceptor = {
 	install() {

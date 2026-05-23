@@ -1,4 +1,4 @@
-import { LANGUAGE_RULES } from "./language-rules.js";
+import { LANGUAGE_RULES } from "@/parsers/language-rules.js";
 
 export const ViewsParser = {
 	parsePlainNumber(numStr) {

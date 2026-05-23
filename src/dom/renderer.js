@@ -1,4 +1,4 @@
-import { CONFIG } from "../config.js";
+import { CONFIG } from "@/config.js";
 
 export const DOMRenderer = {
 	// SVG nodes created programmatically to comply with Trusted Types CSP

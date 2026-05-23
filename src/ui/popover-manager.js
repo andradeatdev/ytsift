@@ -1,6 +1,6 @@
-import { FilterEngine } from "../core/filter-engine.js";
-import { State } from "../core/state.js";
-import { UIBuilder } from "./builder.js";
+import { FilterEngine } from "@/core/filter-engine.js";
+import { State } from "@/core/state.js";
+import { UIBuilder } from "@/ui/builder.js";
 
 export const PopoverManager = {
 	durationPopover: null,

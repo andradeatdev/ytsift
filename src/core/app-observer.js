@@ -1,10 +1,10 @@
-import { CONFIG } from "../config.js";
-import { UIBuilder } from "../ui/builder.js";
-import { PopoverManager } from "../ui/popover-manager.js";
-import { StyleManager } from "../ui/style-manager.js";
-import { FetchInterceptor } from "./fetch-interceptor.js";
-import { FilterEngine } from "./filter-engine.js";
-import { State } from "./state.js";
+import { CONFIG } from "@/config.js";
+import { UIBuilder } from "@/ui/builder.js";
+import { PopoverManager } from "@/ui/popover-manager.js";
+import { StyleManager } from "@/ui/style-manager.js";
+import { FetchInterceptor } from "@/core/fetch-interceptor.js";
+import { FilterEngine } from "@/core/filter-engine.js";
+import { State } from "@/core/state.js";
 
 export const AppObserver = {
 	observer: null,

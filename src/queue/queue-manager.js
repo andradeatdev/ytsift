@@ -1,5 +1,5 @@
-import { CONFIG } from "../config.js";
-import { DataModelResolver } from "../dom/resolver.js";
+import { CONFIG } from "@/config.js";
+import { DataModelResolver } from "@/dom/resolver.js";
 
 export const QueueManager = {
 	enqueueVideo(videoId) {

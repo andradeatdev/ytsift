@@ -1,4 +1,4 @@
-import { BaseFilter } from "./base.js";
+import { BaseFilter } from "@/filters/base.js";
 
 export class DurationFilter extends BaseFilter {
 	constructor() {
