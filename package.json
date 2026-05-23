@@ -1,0 +1,33 @@
+{
+  "name": "ytsift",
+  "version": "1.0.0",
+  "description": "YouTube channel video filter userscript",
+  "packageManager": "pnpm@10.33.2",
+  "main": "ytsift.user.js",
+  "scripts": {
+    "format": "biome format ytsift.user.js --write",
+    "lint:biome": "biome lint ytsift.user.js",
+    "lint:metadata": "eslint ytsift.user.js",
+    "lint": "pnpm lint:biome && pnpm lint:metadata",
+    "build": "tsc",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.8.0",
+    "eslint": "^8.57.0",
+    "eslint-plugin-userscripts": "^0.5.6",
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.2",
+    "typescript": "^5.4.5"
+  },
+  "lint-staged": {
+    "ytsift.user.js": [
+      "biome format --write",
+      "biome lint",
+      "eslint"
+    ]
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["@biomejs/biome"]
+  }
+}

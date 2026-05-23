@@ -1,13 +1,13 @@
 // ==UserScript==
-// @name            YouTube - ytsift
-// @namespace       https://greasyfork.org/users/821661
-// @match           https://www.youtube.com/*
-// @grant           GM_addStyle
+// @name         YouTube - ytsift
+// @namespace    https://greasyfork.org/users/821661
+// @match        https://www.youtube.com/*
+// @grant        GM_addStyle
 // @noframes
-// @version         1.0.0
-// @author          hdyzen
-// @description     Intelligent local filter for YouTube channel videos
-// @license         GPL-3.0
+// @version      1.0.0
+// @author       hdyzen
+// @description  Intelligent local filter for YouTube channel videos
+// @license      GPL-3.0
 // ==/UserScript==
 
 const CONFIG = {
@@ -474,7 +474,7 @@ class BaseFilter {
     reset() {
         this.active = false;
     }
-    matches(metadata) {
+    matches(_metadata) {
         return true;
     }
 }
@@ -555,7 +555,7 @@ class DurationFilter extends BaseFilter {
         super();
         this.preset = null;
         this.min = 0;
-        this.max = Infinity;
+        this.max = Number.POSITIVE_INFINITY;
     }
 
     setRange(min, max, preset = "custom") {
@@ -568,7 +568,7 @@ class DurationFilter extends BaseFilter {
     reset() {
         this.preset = null;
         this.min = 0;
-        this.max = Infinity;
+        this.max = Number.POSITIVE_INFINITY;
         this.active = false;
     }
 
@@ -585,18 +585,18 @@ class ViewsFilter extends BaseFilter {
     constructor() {
         super();
         this.min = 0;
-        this.max = Infinity;
+        this.max = Number.POSITIVE_INFINITY;
     }
 
     setRange(min, max) {
         this.min = min;
         this.max = max;
-        this.active = min > 0 || max < Infinity;
+        this.active = min > 0 || max < Number.POSITIVE_INFINITY;
     }
 
     reset() {
         this.min = 0;
-        this.max = Infinity;
+        this.max = Number.POSITIVE_INFINITY;
         this.active = false;
     }
 
@@ -610,18 +610,18 @@ class AgeFilter extends BaseFilter {
     constructor() {
         super();
         this.min = 0;
-        this.max = Infinity;
+        this.max = Number.POSITIVE_INFINITY;
     }
 
     setRange(min, max) {
         this.min = min;
         this.max = max;
-        this.active = min > 0 || max < Infinity;
+        this.active = min > 0 || max < Number.POSITIVE_INFINITY;
     }
 
     reset() {
         this.min = 0;
-        this.max = Infinity;
+        this.max = Number.POSITIVE_INFINITY;
         this.active = false;
     }
 
@@ -726,34 +726,34 @@ const DurationParser = {
 const ViewsParser = {
     parsePlainNumber(numStr) {
         const clean = numStr.trim();
-        if (!clean) return NaN;
+        if (!clean) return Number.NaN;
         if (clean.includes(",") && clean.includes(".")) {
             const commaIndex = clean.lastIndexOf(",");
             const dotIndex = clean.lastIndexOf(".");
             if (dotIndex > commaIndex) {
-                return parseFloat(clean.replace(/,/g, ""));
+                return Number.parseFloat(clean.replace(/,/g, ""));
             }
-            return parseFloat(clean.replace(/\./g, "").replace(",", "."));
+            return Number.parseFloat(clean.replace(/\./g, "").replace(",", "."));
         }
         if (clean.includes(",")) {
             const parts = clean.split(",");
             if (parts.length === 2 && parts[1].length !== 3) {
-                return parseFloat(clean.replace(",", "."));
+                return Number.parseFloat(clean.replace(",", "."));
             }
-            return parseFloat(clean.replace(/,/g, ""));
+            return Number.parseFloat(clean.replace(/,/g, ""));
         }
         if (clean.includes(".")) {
             const parts = clean.split(".");
             if (parts.length === 2 && parts[1].length !== 3) {
-                return parseFloat(clean);
+                return Number.parseFloat(clean);
             }
-            return parseFloat(clean.replace(/\./g, ""));
+            return Number.parseFloat(clean.replace(/\./g, ""));
         }
-        return parseFloat(clean);
+        return Number.parseFloat(clean);
     },
 
     parseViewsWithRules(text) {
-        if (!text) return NaN;
+        if (!text) return Number.NaN;
         const cleanStr = text.toLowerCase().trim();
 
         for (const langKey of Object.keys(LANGUAGE_RULES)) {
@@ -771,7 +771,7 @@ const ViewsParser = {
                     if (lang.decimalSeparator && lang.decimalSeparator !== ".") {
                         cleanedNum = cleanedNum.replaceAll(lang.decimalSeparator, ".");
                     }
-                    const val = parseFloat(cleanedNum);
+                    const val = Number.parseFloat(cleanedNum);
                     if (!Number.isNaN(val)) {
                         return Math.round(val * mult.value);
                     }
@@ -787,7 +787,7 @@ const ViewsParser = {
             }
         }
 
-        return NaN;
+        return Number.NaN;
     },
 
     parseViews(viewsStr) {
@@ -805,7 +805,7 @@ const AgeParser = {
         const match = clean.match(/(\d+)\s*(minute|hour|day|week|month|year|minuto|hora|dia|semana|mês|meses|ano)s?/);
         if (!match) return 0;
 
-        const value = parseInt(match[1]);
+        const value = Number.parseInt(match[1]);
         const unit = match[2];
 
         switch (unit) {
@@ -873,7 +873,7 @@ const DataModelResolver = {
                 if (bottomOverlay && Array.isArray(bottomOverlay.badges)) {
                     for (const badge of bottomOverlay.badges) {
                         const badgeModel = badge.thumbnailBadgeViewModel;
-                        if (badgeModel && badgeModel.text) {
+                        if (badgeModel?.text) {
                             return badgeModel.text;
                         }
                     }
@@ -906,9 +906,9 @@ const DataModelResolver = {
         if (pbEl) {
             const getPercentFromStyle = (el) => {
                 const widthStr = el.style.width;
-                if (widthStr && widthStr.includes("%")) {
+                if (widthStr?.includes("%")) {
                     const match = widthStr.match(/(\d+(?:\.\d+)?)\s*%/);
-                    if (match) return parseFloat(match[1]);
+                    if (match) return Number.parseFloat(match[1]);
                 }
                 return null;
             };
@@ -1011,10 +1011,7 @@ const DataModelResolver = {
             const path2 = "lockupViewModel.contentImage.thumbnailViewModel.videoThumbnailCommand.watchEndpoint.videoId";
             const path3 = "content.lockupViewModel.metadata.lockupMetadataViewModel.title.command.watchEndpoint.videoId";
             const path4 = "lockupViewModel.metadata.lockupMetadataViewModel.title.command.watchEndpoint.videoId";
-            const id = this.getNestedValue(data, path1) || 
-                       this.getNestedValue(data, path2) || 
-                       this.getNestedValue(data, path3) || 
-                       this.getNestedValue(data, path4);
+            const id = this.getNestedValue(data, path1) || this.getNestedValue(data, path2) || this.getNestedValue(data, path3) || this.getNestedValue(data, path4);
             if (id) return id;
         }
 
@@ -1235,7 +1232,7 @@ const PopoverManager = {
             minSlider.value = min;
             minValSpan.textContent = `${min}m`;
 
-            if (max === Infinity) {
+            if (max === Number.POSITIVE_INFINITY) {
                 maxSlider.value = "120";
                 maxValSpan.textContent = "Max";
                 return;
@@ -1256,7 +1253,7 @@ const PopoverManager = {
             }
 
             let min = 0;
-            let max = Infinity;
+            let max = Number.POSITIVE_INFINITY;
             if (preset === "short") {
                 min = 0;
                 max = 4;
@@ -1267,7 +1264,7 @@ const PopoverManager = {
             }
             if (preset === "long") {
                 min = 20;
-                max = Infinity;
+                max = Number.POSITIVE_INFINITY;
             }
             State.filters.duration.setRange(min, max, preset);
             updateUI();
@@ -1281,15 +1278,15 @@ const PopoverManager = {
         btnLong.addEventListener("click", () => handlePresetClick("long"));
 
         const handleSliderChange = () => {
-            let min = parseInt(minSlider.value);
-            let max = parseInt(maxSlider.value);
+            let min = Number.parseInt(minSlider.value);
+            const max = Number.parseInt(maxSlider.value);
 
             if (max !== 120 && min > max) {
                 min = max;
                 minSlider.value = min;
             }
 
-            const limitMax = max === 120 ? Infinity : max;
+            const limitMax = max === 120 ? Number.POSITIVE_INFINITY : max;
 
             let preset = "custom";
             if (min === 0 && limitMax === 4) {
@@ -1298,7 +1295,7 @@ const PopoverManager = {
             if (min === 4 && limitMax === 20) {
                 preset = "medium";
             }
-            if (min === 20 && limitMax === Infinity) {
+            if (min === 20 && limitMax === Number.POSITIVE_INFINITY) {
                 preset = "long";
             }
             State.filters.duration.setRange(min, limitMax, preset);
@@ -1314,11 +1311,11 @@ const PopoverManager = {
     },
 
     buildViewsContent() {
-        const VIEW_STEPS = [0, 100, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000, 5000000, 10000000, Infinity];
+        const VIEW_STEPS = [0, 100, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000, 5000000, 10000000, Number.POSITIVE_INFINITY];
 
         const formatViewsValue = (val) => {
             if (val === 0) return "0";
-            if (val === Infinity) return "Max";
+            if (val === Number.POSITIVE_INFINITY) return "Max";
             if (val >= 1000000) return `${(val / 1000000).toFixed(1).replace(".0", "")}M`;
             if (val >= 1000) return `${(val / 1000).toFixed(1).replace(".0", "")}k`;
             return val.toString();
@@ -1387,8 +1384,8 @@ const PopoverManager = {
         this.viewsPopover.appendChild(container);
 
         const handleSliderChange = () => {
-            let minIndex = parseInt(minSlider.value);
-            let maxIndex = parseInt(maxSlider.value);
+            let minIndex = Number.parseInt(minSlider.value);
+            const maxIndex = Number.parseInt(maxSlider.value);
 
             if (minIndex > maxIndex) {
                 minIndex = maxIndex;
@@ -1489,7 +1486,7 @@ const PopoverManager = {
         };
 
         const handleTypeClick = (type) => {
-            State.filters.watched.setCriteria(type, parseInt(slider.value));
+            State.filters.watched.setCriteria(type, Number.parseInt(slider.value));
             updateUI();
             UIBuilder.updateWatchedChipText();
             FilterEngine.apply();
@@ -1500,7 +1497,7 @@ const PopoverManager = {
         btnWatched.addEventListener("click", () => handleTypeClick("watched"));
 
         slider.addEventListener("input", () => {
-            const percent = parseInt(slider.value);
+            const percent = Number.parseInt(slider.value);
             sliderValue.textContent = `${percent}%`;
             if (State.filters.watched.type !== "all") {
                 State.filters.watched.setCriteria(State.filters.watched.type, percent);
@@ -1511,11 +1508,11 @@ const PopoverManager = {
     },
 
     buildAgeContent() {
-        const AGE_STEPS = [0, 1, 2, 3, 5, 7, 14, 30, 90, 180, 365, 730, 1095, Infinity];
+        const AGE_STEPS = [0, 1, 2, 3, 5, 7, 14, 30, 90, 180, 365, 730, 1095, Number.POSITIVE_INFINITY];
 
         const formatAgeValue = (days) => {
             if (days === 0) return "0 days";
-            if (days === Infinity) return "Max";
+            if (days === Number.POSITIVE_INFINITY) return "Max";
             if (days >= 365) {
                 const yrs = days / 365;
                 return `${yrs.toFixed(1).replace(".0", "")}y`;
@@ -1594,8 +1591,8 @@ const PopoverManager = {
         this.agePopover.appendChild(container);
 
         const handleSliderChange = () => {
-            let minIndex = parseInt(minSlider.value);
-            let maxIndex = parseInt(maxSlider.value);
+            let minIndex = Number.parseInt(minSlider.value);
+            const maxIndex = Number.parseInt(maxSlider.value);
 
             if (minIndex > maxIndex) {
                 minIndex = maxIndex;
@@ -1635,16 +1632,16 @@ const PopoverManager = {
         if (minSlider) minSlider.value = min === "" ? 0 : min;
         if (minValSpan) minValSpan.textContent = `${min === "" ? 0 : min}m`;
 
-        if (maxSlider) maxSlider.value = (max === Infinity || max === "") ? 120 : max;
-        if (maxValSpan) maxValSpan.textContent = (max === Infinity || max === "") ? "Max" : `${max}m`;
+        if (maxSlider) maxSlider.value = max === Number.POSITIVE_INFINITY || max === "" ? 120 : max;
+        if (maxValSpan) maxValSpan.textContent = max === Number.POSITIVE_INFINITY || max === "" ? "Max" : `${max}m`;
     },
 
     updateViewsInputs(min, max) {
-        const VIEW_STEPS = [0, 100, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000, 5000000, 10000000, Infinity];
+        const VIEW_STEPS = [0, 100, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000, 5000000, 10000000, Number.POSITIVE_INFINITY];
 
         const formatViewsValue = (val) => {
             if (val === 0) return "0";
-            if (val === Infinity) return "Max";
+            if (val === Number.POSITIVE_INFINITY) return "Max";
             if (val >= 1000000) return `${(val / 1000000).toFixed(1).replace(".0", "")}M`;
             if (val >= 1000) return `${(val / 1000).toFixed(1).replace(".0", "")}k`;
             return val.toString();
@@ -1656,7 +1653,7 @@ const PopoverManager = {
         const maxValSpan = this.viewsPopover.querySelector("#ytsift-popover-views-max-val");
 
         const actualMin = min === "" ? 0 : min;
-        const actualMax = max === "" ? Infinity : max;
+        const actualMax = max === "" ? Number.POSITIVE_INFINITY : max;
 
         let minIndex = VIEW_STEPS.indexOf(actualMin);
         if (minIndex === -1) minIndex = 0;
@@ -1694,11 +1691,11 @@ const PopoverManager = {
     },
 
     updateAgeInputs(min, max) {
-        const AGE_STEPS = [0, 1, 2, 3, 5, 7, 14, 30, 90, 180, 365, 730, 1095, Infinity];
+        const AGE_STEPS = [0, 1, 2, 3, 5, 7, 14, 30, 90, 180, 365, 730, 1095, Number.POSITIVE_INFINITY];
 
         const formatAgeValue = (days) => {
             if (days === 0) return "0 days";
-            if (days === Infinity) return "Max";
+            if (days === Number.POSITIVE_INFINITY) return "Max";
             if (days >= 365) {
                 const yrs = days / 365;
                 return `${yrs.toFixed(1).replace(".0", "")}y`;
@@ -1720,7 +1717,7 @@ const PopoverManager = {
         const maxValSpan = this.agePopover.querySelector("#ytsift-popover-age-max-val");
 
         const actualMin = min === "" ? 0 : min;
-        const actualMax = max === "" ? Infinity : max;
+        const actualMax = max === "" ? Number.POSITIVE_INFINITY : max;
 
         let minIndex = AGE_STEPS.indexOf(actualMin);
         if (minIndex === -1) minIndex = 0;
@@ -1807,7 +1804,7 @@ const FilterEngine = {
         const cards = document.querySelectorAll(CONFIG.SELECTORS.VIDEO_CARD);
         let matchCount = 0;
 
-        cards.forEach((card) => {
+        for (const card of cards) {
             const cardData = DataModelResolver.getCardData(card);
 
             // Static video title is cached on the DOM node for performance
@@ -1843,7 +1840,7 @@ const FilterEngine = {
             // Static view count is cached on the DOM node to avoid redundant parsing
             let views = card.__ytsift_views;
             if (views === undefined) {
-                let parsed = NaN;
+                let parsed = Number.NaN;
 
                 if (cardData) {
                     const viewsPart = DataModelResolver.getVideoViewsPart(cardData);
@@ -1896,7 +1893,7 @@ const FilterEngine = {
             // Static age in days is cached on the DOM node to avoid redundant parsing
             let ageDays = card.__ytsift_age_days;
             if (ageDays === undefined) {
-                let parsed = NaN;
+                let parsed = Number.NaN;
 
                 if (cardData) {
                     const agePart = DataModelResolver.getVideoAgePart(cardData);
@@ -1975,7 +1972,7 @@ const FilterEngine = {
             if (!shouldHide) {
                 matchCount++;
             }
-        });
+        }
 
         const counterEl = document.getElementById("ytsift-counter");
         if (counterEl) {
@@ -1993,8 +1990,8 @@ const QueueManager = {
             return false;
         }
 
-        const commandExecutor = ytdApp.resolveCommand || (ytdApp.__data__ && ytdApp.__data__.commandExecutor);
-        const apiService = ytdApp.apiService_ || (ytdApp.services_ && ytdApp.services_.api);
+        const commandExecutor = ytdApp.resolveCommand || ytdApp.__data__?.commandExecutor;
+        const apiService = ytdApp.apiService_ || ytdApp.services_?.api;
 
         const actionPayload = {
             clickTrackingParams: "CMQBEPBbIhMI4anqme3PlAMVZrqVAh0TaiGqygEEl8RGWA==",
@@ -2005,19 +2002,19 @@ const QueueManager = {
                 onCreateListCommand: {
                     clickTrackingParams: "CMQBEPBbIhMI4anqme3PlAMVZrqVAh0TaiGqygEEl8RGWA==",
                     commandMetadata: {
-                        webCommandMetadata: { sendPost: true, apiUrl: "/youtubei/v1/playlist/create" }
+                        webCommandMetadata: { sendPost: true, apiUrl: "/youtubei/v1/playlist/create" },
                     },
-                    createPlaylistServiceEndpoint: { videoIds: [videoId], params: "CAQ%3D" }
+                    createPlaylistServiceEndpoint: { videoIds: [videoId], params: "CAQ%3D" },
                 },
                 videoIds: [videoId],
                 videoCommand: {
                     clickTrackingParams: "CMQBEPBbIhMI4anqme3PlAMVZrqVAh0TaiGqygEEl8RGWA==",
                     commandMetadata: {
-                        webCommandMetadata: { url: `/watch?v=${videoId}`, webPageType: "WEB_PAGE_TYPE_WATCH", rootVe: 3832 }
+                        webCommandMetadata: { url: `/watch?v=${videoId}`, webPageType: "WEB_PAGE_TYPE_WATCH", rootVe: 3832 },
                     },
-                    watchEndpoint: { videoId: videoId }
-                }
-            }
+                    watchEndpoint: { videoId: videoId },
+                },
+            },
         };
 
         if (typeof commandExecutor === "function") {
@@ -2025,8 +2022,8 @@ const QueueManager = {
                 commandExecutor.call(ytdApp, {
                     signalServiceEndpoint: {
                         signal: "CLIENT_SIGNAL",
-                        actions: [actionPayload]
-                    }
+                        actions: [actionPayload],
+                    },
                 });
                 console.log(`[ytsift] Native command executed for video: ${videoId}`);
                 return true;
@@ -2039,7 +2036,7 @@ const QueueManager = {
             try {
                 apiService.executeServiceAction({
                     actionName: "yt-service-request-action",
-                    args: [actionPayload, ytdApp]
+                    args: [actionPayload, ytdApp],
                 });
                 console.log(`[ytsift] API service executed for video: ${videoId}`);
                 return true;
@@ -2054,7 +2051,7 @@ const QueueManager = {
     getVisibleVideoIds() {
         const cards = document.querySelectorAll(CONFIG.SELECTORS.VIDEO_CARD);
         const ids = new Set();
-        cards.forEach((card) => {
+        for (const card of cards) {
             if (!card.classList.contains(CONFIG.CLASSES.HIDDEN)) {
                 const data = DataModelResolver.getCardData(card);
                 const id = DataModelResolver.getVideoId(data, card);
@@ -2062,9 +2059,9 @@ const QueueManager = {
                     ids.add(id);
                 }
             }
-        });
+        }
         return Array.from(ids);
-    }
+    },
 };
 
 const FetchInterceptor = {
@@ -2271,12 +2268,12 @@ const UIBuilder = {
             chip.textContent = "Duration: Medium ▾";
             return;
         }
-        if (State.filters.duration.preset === "long" && min === 20 && max === Infinity) {
+        if (State.filters.duration.preset === "long" && min === 20 && max === Number.POSITIVE_INFINITY) {
             chip.textContent = "Duration: Long ▾";
             return;
         }
 
-        const maxText = max === Infinity ? "+" : `-${max}`;
+        const maxText = max === Number.POSITIVE_INFINITY ? "+" : `-${max}`;
         chip.textContent = `Duration: ${min}${maxText}m ▾`;
     },
 
@@ -2303,7 +2300,7 @@ const UIBuilder = {
         const min = State.filters.views.min;
         const max = State.filters.views.max;
 
-        if (min === 0 && max === Infinity) {
+        if (min === 0 && max === Number.POSITIVE_INFINITY) {
             chip.textContent = "Views ▾";
             chip.classList.remove(CONFIG.CLASSES.ACTIVE);
             chip.setAttribute("aria-pressed", "false");
@@ -2311,12 +2308,12 @@ const UIBuilder = {
             return;
         }
 
-        if (min > 0 && max === Infinity) {
+        if (min > 0 && max === Number.POSITIVE_INFINITY) {
             chip.textContent = `Views: >${this.formatViewsLabel(min)} ▾`;
             return;
         }
 
-        if (min === 0 && max < Infinity) {
+        if (min === 0 && max < Number.POSITIVE_INFINITY) {
             chip.textContent = `Views: <${this.formatViewsLabel(max)} ▾`;
             return;
         }
@@ -2341,7 +2338,7 @@ const UIBuilder = {
         const min = State.filters.age.min;
         const max = State.filters.age.max;
 
-        if (min === 0 && max === Infinity) {
+        if (min === 0 && max === Number.POSITIVE_INFINITY) {
             chip.textContent = "Age ▾";
             chip.classList.remove(CONFIG.CLASSES.ACTIVE);
             chip.setAttribute("aria-pressed", "false");
@@ -2351,7 +2348,7 @@ const UIBuilder = {
 
         const formatAgeLabel = (days) => {
             if (days === 0) return "0d";
-            if (days === Infinity) return "Max";
+            if (days === Number.POSITIVE_INFINITY) return "Max";
             if (days >= 365) {
                 const yrs = days / 365;
                 return `${yrs.toFixed(1).replace(".0", "")}y`;
@@ -2367,12 +2364,12 @@ const UIBuilder = {
             return `${days}d`;
         };
 
-        if (min > 0 && max === Infinity) {
+        if (min > 0 && max === Number.POSITIVE_INFINITY) {
             chip.textContent = `Age: >${formatAgeLabel(min)} ▾`;
             return;
         }
 
-        if (min === 0 && max < Infinity) {
+        if (min === 0 && max < Number.POSITIVE_INFINITY) {
             chip.textContent = `Age: <${formatAgeLabel(max)} ▾`;
             return;
         }
@@ -2416,10 +2413,7 @@ const UIBuilder = {
                 return;
             }
 
-            PopoverManager.updateWatchedInputs(
-                State.filters.watched.type,
-                State.filters.watched.percent,
-            );
+            PopoverManager.updateWatchedInputs(State.filters.watched.type, State.filters.watched.percent);
             PopoverManager.showWatched(watchedChip);
         });
 
@@ -2433,7 +2427,7 @@ const UIBuilder = {
 
             PopoverManager.updateDurationInputs(
                 !State.filters.duration.isActive() ? "" : State.filters.duration.min,
-                State.filters.duration.max === Infinity ? "" : State.filters.duration.max,
+                State.filters.duration.max === Number.POSITIVE_INFINITY ? "" : State.filters.duration.max,
             );
             PopoverManager.showDuration(durationChip);
         });
@@ -2448,7 +2442,7 @@ const UIBuilder = {
 
             PopoverManager.updateViewsInputs(
                 !State.filters.views.isActive() ? "" : State.filters.views.min,
-                State.filters.views.max === Infinity ? "" : State.filters.views.max,
+                State.filters.views.max === Number.POSITIVE_INFINITY ? "" : State.filters.views.max,
             );
             PopoverManager.showViews(viewsChip);
         });
@@ -2463,7 +2457,7 @@ const UIBuilder = {
 
             PopoverManager.updateAgeInputs(
                 !State.filters.age.isActive() ? "" : State.filters.age.min,
-                State.filters.age.max === Infinity ? "" : State.filters.age.max,
+                State.filters.age.max === Number.POSITIVE_INFINITY ? "" : State.filters.age.max,
             );
             PopoverManager.showAge(ageChip);
         });

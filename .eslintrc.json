@@ -1,0 +1,25 @@
+{
+  "env": {
+    "browser": true,
+    "es2022": true,
+    "greasemonkey": true
+  },
+  "globals": {
+    "URLPattern": "readonly"
+  },
+  "extends": [
+    "eslint:recommended",
+    "plugin:userscripts/recommended"
+  ],
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "sourceType": "script"
+  },
+  "plugins": [
+    "userscripts"
+  ],
+  "rules": {
+    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+    "no-undef": "error"
+  }
+}
