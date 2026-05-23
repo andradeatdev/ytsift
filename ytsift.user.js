@@ -64,14 +64,7 @@ const StyleManager = {
                 --ytsift-popover-blur: 12px;
                 
                 /* Input layout (in ems, relative to --ytsift-popover-font-size) */
-                --ytsift-input-height: 2.15em; /* 28px */
                 --ytsift-input-radius: 0.46em; /* 6px */
-                --ytsift-input-focus-bg: var(--yt-sys-color-baseline--base-background, #fff);
-                
-                /* Custom spinner sizing (in ems, relative to --ytsift-popover-font-size) */
-                --ytsift-spin-width: 1.69em; /* 22px */
-                --ytsift-spin-btn-height: 0.92em; /* 12px */
-                --ytsift-spin-icon-size: 1.08em; /* 14px */
             }
 
             .ytChipBarViewModelChipBarScrollContainer {
@@ -366,102 +359,6 @@ const StyleManager = {
                 background-color: var(--yt-sys-color-baseline--mono-filled-hover, #333);
             }
 
-            .ytsift-time-input,
-            .ytsift-views-input {
-                border: 1px solid var(--ytsift-outline);
-                background-color: var(--ytsift-tonal-bg);
-                color: var(--ytsift-text-primary);
-                border-radius: var(--ytsift-input-radius);
-                height: var(--ytsift-input-height);
-                font-size: 1em; /* 13px */
-                padding: 0 0.62em; /* 8px */
-                font-family: "Roboto", "Arial", sans-serif;
-                outline: none;
-                box-sizing: border-box;
-                vertical-align: middle;
-                transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s;
-            }
-
-            .ytsift-time-input {
-                width: 5em; /* 60px */
-            }
-
-            .ytsift-views-input {
-                width: 6.92em; /* 90px */
-            }
-
-            .ytsift-time-input:hover,
-            .ytsift-views-input:hover {
-                background-color: var(--ytsift-hover-bg);
-            }
-
-            .ytsift-time-input:focus,
-            .ytsift-views-input:focus {
-                border-color: var(--ytsift-text-primary);
-                background-color: var(--ytsift-input-focus-bg);
-                box-shadow: 0 0 0 1px var(--ytsift-text-primary);
-            }
-
-            /* Hide browser default spin buttons */
-            .ytsift-time-input::-webkit-outer-spin-button,
-            .ytsift-time-input::-webkit-inner-spin-button {
-                -webkit-appearance: none;
-                margin: 0;
-            }
-
-            .ytsift-time-input {
-                -moz-appearance: textfield;
-            }
-
-            .ytsift-number-spinner {
-                position: relative;
-                display: inline-flex;
-                align-items: center;
-            }
-
-            .ytsift-number-spinner .ytsift-time-input {
-                padding-right: calc(var(--ytsift-spin-width) + 0.62em); /* Make room for spinners */
-            }
-
-            .ytsift-spin-controls {
-                position: absolute;
-                right: 0.31em; /* 4px */
-                top: 50%;
-                transform: translateY(-50%);
-                display: flex;
-                flex-direction: column;
-                height: calc(100% - 0.46em); /* 6px height offset */
-                justify-content: center;
-                width: var(--ytsift-spin-width);
-                pointer-events: none;
-            }
-
-            .ytsift-spin-btn {
-                background: transparent;
-                border: none;
-                padding: 0;
-                margin: 0;
-                width: var(--ytsift-spin-width);
-                height: var(--ytsift-spin-btn-height);
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: var(--ytsift-text-secondary);
-                pointer-events: auto;
-                transition: color 0.15s;
-            }
-
-            .ytsift-spin-btn:hover {
-                color: var(--ytsift-text-primary);
-            }
-
-            .ytsift-spin-btn svg {
-                width: var(--ytsift-spin-icon-size);
-                height: var(--ytsift-spin-icon-size);
-                fill: currentColor;
-            }
-
             .ytsift-clear-all-btn {
                 border: none;
                 background: transparent;
@@ -483,6 +380,62 @@ const StyleManager = {
                 background-color: var(--ytsift-hover-bg);
             }
 
+            .ytsift-popover-slider-container {
+                display: flex;
+                flex-direction: column;
+                gap: 0.46em; /* 6px */
+                border-top: 1px solid var(--ytsift-outline);
+                padding-top: 0.62em; /* 8px */
+                margin-top: 0.15em; /* 2px */
+            }
+
+            .ytsift-slider-header {
+                display: flex;
+                justify-content: space-between;
+                font-size: 0.92em; /* 12px */
+                font-family: "Roboto", "Arial", sans-serif;
+                color: var(--ytsift-text-secondary);
+            }
+
+            .ytsift-slider {
+                -webkit-appearance: none;
+                width: 100%;
+                height: 4px;
+                border-radius: 2px;
+                background: var(--ytsift-tonal-bg);
+                outline: none;
+                margin: 0.62em 0;
+            }
+
+            .ytsift-slider::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                background: var(--ytsift-text-primary);
+                cursor: pointer;
+                transition: transform 0.1s ease;
+            }
+
+            .ytsift-slider::-webkit-slider-thumb:hover {
+                transform: scale(1.2);
+            }
+
+            .ytsift-slider::-moz-range-thumb {
+                width: 12px;
+                height: 12px;
+                border: none;
+                border-radius: 50%;
+                background: var(--ytsift-text-primary);
+                cursor: pointer;
+                transition: transform 0.1s ease;
+            }
+
+            .ytsift-slider::-moz-range-thumb:hover {
+                transform: scale(1.2);
+            }
+
             ytd-rich-item-renderer.ytsift-hidden {
                 display: none !important;
             }
@@ -490,18 +443,154 @@ const StyleManager = {
     },
 };
 
+class BaseFilter {
+    constructor() {
+        this.active = false;
+    }
+    isActive() {
+        return this.active;
+    }
+    reset() {
+        this.active = false;
+    }
+    matches(metadata) {
+        return true;
+    }
+}
+
+class TextFilter extends BaseFilter {
+    constructor() {
+        super();
+        this.query = "";
+        this.positiveWords = [];
+        this.negativeWords = [];
+    }
+
+    setQuery(query) {
+        this.query = query;
+        const allWords = query.toLowerCase().split(/\s+/).filter(Boolean);
+        this.positiveWords = [];
+        this.negativeWords = [];
+        for (const word of allWords) {
+            if (word.startsWith("-") && word.length > 1) {
+                this.negativeWords.push(word.slice(1));
+            } else {
+                this.positiveWords.push(word);
+            }
+        }
+        this.active = this.positiveWords.length > 0 || this.negativeWords.length > 0;
+    }
+
+    reset() {
+        this.query = "";
+        this.positiveWords = [];
+        this.negativeWords = [];
+        this.active = false;
+    }
+
+    matches(metadata) {
+        if (!this.isActive()) return true;
+        const titleLower = (metadata.title || "").toLowerCase();
+        const matchesPositive = this.positiveWords.every((word) => titleLower.includes(word));
+        const matchesNegative = this.negativeWords.some((word) => titleLower.includes(word));
+        return matchesPositive && !matchesNegative;
+    }
+}
+
+class WatchedFilter extends BaseFilter {
+    constructor() {
+        super();
+        this.type = "all"; // "all" | "watched" | "unwatched"
+        this.percent = 10; // threshold percentage (default 10%)
+    }
+
+    setCriteria(type, percent) {
+        this.type = type;
+        this.percent = percent;
+        this.active = type !== "all";
+    }
+
+    reset() {
+        this.type = "all";
+        this.percent = 10;
+        this.active = false;
+    }
+
+    matches(metadata) {
+        if (!this.isActive()) return true;
+        const videoPercent = metadata.watchedPercent || 0;
+        if (this.type === "watched") {
+            return videoPercent >= this.percent;
+        }
+        if (this.type === "unwatched") {
+            return videoPercent < this.percent;
+        }
+        return true;
+    }
+}
+
+class DurationFilter extends BaseFilter {
+    constructor() {
+        super();
+        this.preset = null;
+        this.min = 0;
+        this.max = Infinity;
+    }
+
+    setRange(min, max, preset = "custom") {
+        this.min = min;
+        this.max = max;
+        this.preset = preset;
+        this.active = preset !== null;
+    }
+
+    reset() {
+        this.preset = null;
+        this.min = 0;
+        this.max = Infinity;
+        this.active = false;
+    }
+
+    matches(metadata) {
+        if (!this.isActive()) return true;
+        const sec = metadata.durationSec;
+        const minSec = this.min * 60;
+        const maxSec = this.max * 60;
+        return sec >= minSec && sec <= maxSec;
+    }
+}
+
+class ViewsFilter extends BaseFilter {
+    constructor() {
+        super();
+        this.min = 0;
+        this.max = Infinity;
+    }
+
+    setRange(min, max) {
+        this.min = min;
+        this.max = max;
+        this.active = min > 0 || max < Infinity;
+    }
+
+    reset() {
+        this.min = 0;
+        this.max = Infinity;
+        this.active = false;
+    }
+
+    matches(metadata) {
+        if (!this.isActive()) return true;
+        return metadata.views >= this.min && metadata.views <= this.max;
+    }
+}
+
 const State = {
-    query: "",
-    hideWatched: false,
-    duration: {
-        preset: null,
-        min: 0,
-        max: Infinity,
-    },
-    views: {
-        active: false,
-        min: 0,
-        max: Infinity,
+    filters: {
+        text: new TextFilter(),
+        watched: new WatchedFilter(),
+        duration: new DurationFilter(),
+        views: new ViewsFilter(),
     },
     lastCardCount: 0,
     lastFetchTime: 0,
@@ -511,19 +600,14 @@ const State = {
     channelIdVideosPattern: new URLPattern({ pathname: "/channel/:id/videos" }),
 
     reset() {
-        this.query = "";
-        this.hideWatched = false;
-        this.duration.preset = null;
-        this.duration.min = 0;
-        this.duration.max = Infinity;
-        this.views.active = false;
-        this.views.min = 0;
-        this.views.max = Infinity;
+        for (const key of Object.keys(this.filters)) {
+            this.filters[key].reset();
+        }
         this.lastCardCount = 0;
     },
 
     isFilterActive() {
-        return this.query !== "" || this.hideWatched || this.duration.preset !== null || this.views.active;
+        return Object.values(this.filters).some((filter) => filter.isActive());
     },
 };
 
@@ -565,65 +649,6 @@ const DOMRenderer = {
         path.setAttribute("d", pathD);
         svg.appendChild(path);
         return svg;
-    },
-
-    createNumberSpinner(id, placeholder, ariaLabel) {
-        const wrapper = document.createElement("div");
-        wrapper.className = "ytsift-number-spinner";
-
-        const input = document.createElement("input");
-        input.id = id;
-        input.className = "ytsift-time-input";
-        input.type = "number";
-        input.min = "0";
-        input.step = "0.5";
-        input.placeholder = placeholder;
-        input.setAttribute("aria-label", ariaLabel);
-
-        const spinControls = document.createElement("div");
-        spinControls.className = "ytsift-spin-controls";
-
-        const btnUp = document.createElement("button");
-        btnUp.className = "ytsift-spin-btn up";
-        btnUp.type = "button";
-        btnUp.tabIndex = -1;
-        btnUp.setAttribute("aria-label", "Increment");
-        btnUp.appendChild(this.createSvgIcon("M7 14l5-5 5 5H7z"));
-
-        const btnDown = document.createElement("button");
-        btnDown.className = "ytsift-spin-btn down";
-        btnDown.type = "button";
-        btnDown.tabIndex = -1;
-        btnDown.setAttribute("aria-label", "Decrement");
-        btnDown.appendChild(this.createSvgIcon("M7 10l5 5 5-5H7z"));
-
-        const stepValue = 0.5;
-        btnUp.addEventListener("click", (e) => {
-            e.preventDefault();
-            const val = parseFloat(input.value);
-            const currentVal = Number.isNaN(val) ? 0 : val;
-            input.value = (currentVal + stepValue).toFixed(1).replace(".0", "");
-            input.dispatchEvent(new Event("input", { bubbles: true }));
-        });
-
-        btnDown.addEventListener("click", (e) => {
-            e.preventDefault();
-            const val = parseFloat(input.value);
-            if (!Number.isNaN(val) && val > 0) {
-                input.value = Math.max(0, val - stepValue)
-                    .toFixed(1)
-                    .replace(".0", "");
-                input.dispatchEvent(new Event("input", { bubbles: true }));
-            }
-        });
-
-        spinControls.appendChild(btnUp);
-        spinControls.appendChild(btnDown);
-
-        wrapper.appendChild(input);
-        wrapper.appendChild(spinControls);
-
-        return { wrapper, input };
     },
 
     createChip({ id, text, duration, pressed }) {
@@ -777,22 +802,47 @@ const DataModelResolver = {
         return undefined;
     },
 
-    getVideoWatched(data) {
-        const overlays =
-            this.getNestedValue(data, "content.lockupViewModel.contentImage.thumbnailViewModel.overlays") ||
-            this.getNestedValue(data, "lockupViewModel.contentImage.thumbnailViewModel.overlays");
-        if (Array.isArray(overlays)) {
-            for (const overlay of overlays) {
-                const pb = this.getNestedValue(overlay, "thumbnailBottomOverlayViewModel.progressBar.thumbnailOverlayProgressBarViewModel");
-                if (pb) {
-                    return true;
-                }
-                if (overlay.thumbnailOverlayProgressBarRenderer) {
-                    return true;
+    getVideoWatchedPercent(data, card) {
+        if (data) {
+            const overlays =
+                this.getNestedValue(data, "content.lockupViewModel.contentImage.thumbnailViewModel.overlays") ||
+                this.getNestedValue(data, "lockupViewModel.contentImage.thumbnailViewModel.overlays");
+            if (Array.isArray(overlays)) {
+                for (const overlay of overlays) {
+                    const pb = this.getNestedValue(overlay, "thumbnailBottomOverlayViewModel.progressBar.thumbnailOverlayProgressBarViewModel");
+                    if (pb && pb.startPercent !== undefined) {
+                        return pb.startPercent;
+                    }
+                    const renderer = overlay.thumbnailOverlayProgressBarRenderer;
+                    if (renderer && renderer.percentWatched !== undefined) {
+                        return renderer.percentWatched;
+                    }
                 }
             }
         }
-        return false;
+        // DOM fallback
+        const pbEl = card.querySelector("ytd-thumbnail-overlay-progress-bar-renderer, yt-thumbnail-overlay-progress-bar-view-model, [role='progressbar']");
+        if (pbEl) {
+            const getPercentFromStyle = (el) => {
+                const widthStr = el.style.width;
+                if (widthStr && widthStr.includes("%")) {
+                    const match = widthStr.match(/(\d+(?:\.\d+)?)\s*%/);
+                    if (match) return parseFloat(match[1]);
+                }
+                return null;
+            };
+            let p = getPercentFromStyle(pbEl);
+            if (p === null) {
+                const children = pbEl.querySelectorAll("*");
+                for (const child of children) {
+                    p = getPercentFromStyle(child);
+                    if (p !== null) break;
+                }
+            }
+            if (p !== null) return p;
+            return 100; // Found progress bar but no style width, assume fully watched
+        }
+        return 0;
     },
 
     getVideoViewsPart(data) {
@@ -831,8 +881,10 @@ const DataModelResolver = {
 const PopoverManager = {
     durationPopover: null,
     viewsPopover: null,
+    watchedPopover: null,
     lastDurationClosedTime: 0,
     lastViewsClosedTime: 0,
+    lastWatchedClosedTime: 0,
 
     init() {
         if (this.durationPopover) return;
@@ -867,11 +919,28 @@ const PopoverManager = {
             }
         });
 
+        this.watchedPopover = document.createElement("div");
+        this.watchedPopover.id = "ytsift-watched-popover";
+        this.watchedPopover.className = "ytsift-popover";
+        this.watchedPopover.setAttribute("popover", "auto");
+        this.watchedPopover.addEventListener("beforetoggle", (e) => {
+            if (e.newState === "open") {
+                const trigger = document.getElementById("ytsift-chip-watched");
+                if (trigger) {
+                    this.position(this.watchedPopover, trigger);
+                }
+            } else if (e.newState === "closed") {
+                this.lastWatchedClosedTime = Date.now();
+            }
+        });
+
         document.body.appendChild(this.durationPopover);
         document.body.appendChild(this.viewsPopover);
+        document.body.appendChild(this.watchedPopover);
 
         this.buildDurationContent();
         this.buildViewsContent();
+        this.buildWatchedContent();
     },
 
     position(popover, target) {
@@ -906,32 +975,77 @@ const PopoverManager = {
         presetsRow.appendChild(btnMedium);
         presetsRow.appendChild(btnLong);
 
-        const inputsRow = document.createElement("div");
-        inputsRow.className = "ytsift-popover-inputs-row";
+        // Sliders
+        const slidersContainer = document.createElement("div");
+        slidersContainer.className = "ytsift-popover-slider-container";
+        slidersContainer.style.borderTop = "1px solid var(--ytsift-outline)";
+        slidersContainer.style.paddingTop = "0.62em";
+        slidersContainer.style.marginTop = "0.15em";
+        slidersContainer.style.display = "flex";
+        slidersContainer.style.flexDirection = "column";
+        slidersContainer.style.gap = "0.62em";
 
-        const minSpinner = DOMRenderer.createNumberSpinner("ytsift-popover-duration-min", "Min", "Minimum duration in minutes");
-        const minInput = minSpinner.input;
+        // Min Duration Slider
+        const minContainer = document.createElement("div");
+        minContainer.style.display = "flex";
+        minContainer.style.flexDirection = "column";
+        minContainer.style.gap = "0.23em";
 
-        const labelMin = document.createElement("span");
-        labelMin.textContent = "m";
+        const minHeader = document.createElement("div");
+        minHeader.className = "ytsift-slider-header";
+        const minLabel = document.createElement("span");
+        minLabel.textContent = "Min Duration";
+        const minValSpan = document.createElement("span");
+        minValSpan.id = "ytsift-popover-duration-min-val";
+        minValSpan.textContent = "0m";
+        minHeader.appendChild(minLabel);
+        minHeader.appendChild(minValSpan);
 
-        const hyphen = document.createElement("span");
-        hyphen.textContent = "-";
+        const minSlider = document.createElement("input");
+        minSlider.id = "ytsift-popover-duration-min-slider";
+        minSlider.className = "ytsift-slider";
+        minSlider.type = "range";
+        minSlider.min = "0";
+        minSlider.max = "60";
+        minSlider.step = "1";
+        minSlider.value = "0";
 
-        const maxSpinner = DOMRenderer.createNumberSpinner("ytsift-popover-duration-max", "Max", "Maximum duration in minutes");
-        const maxInput = maxSpinner.input;
+        minContainer.appendChild(minHeader);
+        minContainer.appendChild(minSlider);
 
-        const labelMax = document.createElement("span");
-        labelMax.textContent = "m";
+        // Max Duration Slider
+        const maxContainer = document.createElement("div");
+        maxContainer.style.display = "flex";
+        maxContainer.style.flexDirection = "column";
+        maxContainer.style.gap = "0.23em";
 
-        inputsRow.appendChild(minSpinner.wrapper);
-        inputsRow.appendChild(labelMin);
-        inputsRow.appendChild(hyphen);
-        inputsRow.appendChild(maxSpinner.wrapper);
-        inputsRow.appendChild(labelMax);
+        const maxHeader = document.createElement("div");
+        maxHeader.className = "ytsift-slider-header";
+        const maxLabel = document.createElement("span");
+        maxLabel.textContent = "Max Duration";
+        const maxValSpan = document.createElement("span");
+        maxValSpan.id = "ytsift-popover-duration-max-val";
+        maxValSpan.textContent = "Max";
+        maxHeader.appendChild(maxLabel);
+        maxHeader.appendChild(maxValSpan);
+
+        const maxSlider = document.createElement("input");
+        maxSlider.id = "ytsift-popover-duration-max-slider";
+        maxSlider.className = "ytsift-slider";
+        maxSlider.type = "range";
+        maxSlider.min = "0";
+        maxSlider.max = "120"; // 120 represents Max (Infinity)
+        maxSlider.step = "1";
+        maxSlider.value = "120";
+
+        maxContainer.appendChild(maxHeader);
+        maxContainer.appendChild(maxSlider);
+
+        slidersContainer.appendChild(minContainer);
+        slidersContainer.appendChild(maxContainer);
 
         container.appendChild(presetsRow);
-        container.appendChild(inputsRow);
+        container.appendChild(slidersContainer);
         this.durationPopover.appendChild(container);
 
         const updatePresetActiveClasses = (activePreset) => {
@@ -940,16 +1054,27 @@ const PopoverManager = {
             btnLong.classList.toggle("active", activePreset === "long");
         };
 
-        const handlePresetClick = (preset) => {
-            const isCurrent = State.duration.preset === preset;
-            if (isCurrent) {
-                State.duration.preset = null;
-                State.duration.min = 0;
-                State.duration.max = Infinity;
-                minInput.value = "";
-                maxInput.value = "";
+        const updateUI = () => {
+            const min = State.filters.duration.min;
+            const max = State.filters.duration.max;
+
+            minSlider.value = min;
+            minValSpan.textContent = `${min}m`;
+
+            if (max === Infinity) {
+                maxSlider.value = "120";
+                maxValSpan.textContent = "Max";
             } else {
-                State.duration.preset = preset;
+                maxSlider.value = max;
+                maxValSpan.textContent = `${max}m`;
+            }
+        };
+
+        const handlePresetClick = (preset) => {
+            const isCurrent = State.filters.duration.preset === preset;
+            if (isCurrent) {
+                State.filters.duration.reset();
+            } else {
                 let min = 0;
                 let max = Infinity;
                 if (preset === "short") {
@@ -962,12 +1087,10 @@ const PopoverManager = {
                     min = 20;
                     max = Infinity;
                 }
-                State.duration.min = min;
-                State.duration.max = max;
-                minInput.value = min;
-                maxInput.value = max === Infinity ? "" : max;
+                State.filters.duration.setRange(min, max, preset);
             }
-            updatePresetActiveClasses(State.duration.preset);
+            updateUI();
+            updatePresetActiveClasses(State.filters.duration.preset);
             UIBuilder.updateDurationChipText();
             FilterEngine.apply();
         };
@@ -976,87 +1099,312 @@ const PopoverManager = {
         btnMedium.addEventListener("click", () => handlePresetClick("medium"));
         btnLong.addEventListener("click", () => handlePresetClick("long"));
 
-        const handleInputChange = () => {
-            const min = parseFloat(minInput.value) || 0;
-            const max = parseFloat(maxInput.value);
-            State.duration.min = min;
-            State.duration.max = Number.isNaN(max) ? Infinity : max;
+        const handleSliderChange = () => {
+            let min = parseInt(minSlider.value);
+            let max = parseInt(maxSlider.value);
 
-            if (State.duration.min === 0 && State.duration.max === 4) {
-                State.duration.preset = "short";
-            } else if (State.duration.min === 4 && State.duration.max === 20) {
-                State.duration.preset = "medium";
-            } else if (State.duration.min === 20 && State.duration.max === Infinity) {
-                State.duration.preset = "long";
-            } else {
-                State.duration.preset = "custom";
+            if (max !== 120 && min > max) {
+                min = max;
+                minSlider.value = min;
             }
 
-            updatePresetActiveClasses(State.duration.preset);
+            const limitMax = max === 120 ? Infinity : max;
+
+            let preset = "custom";
+            if (min === 0 && limitMax === 4) {
+                preset = "short";
+            } else if (min === 4 && limitMax === 20) {
+                preset = "medium";
+            } else if (min === 20 && limitMax === Infinity) {
+                preset = "long";
+            }
+            State.filters.duration.setRange(min, limitMax, preset);
+
+            updateUI();
+            updatePresetActiveClasses(State.filters.duration.preset);
             UIBuilder.updateDurationChipText();
             FilterEngine.apply();
         };
 
-        minInput.addEventListener("input", handleInputChange);
-        maxInput.addEventListener("input", handleInputChange);
+        minSlider.addEventListener("input", handleSliderChange);
+        maxSlider.addEventListener("input", handleSliderChange);
     },
 
     buildViewsContent() {
+        const VIEW_STEPS = [0, 100, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000, 5000000, 10000000, Infinity];
+
+        const formatViewsValue = (val) => {
+            if (val === 0) return "0";
+            if (val === Infinity) return "Max";
+            if (val >= 1000000) return `${(val / 1000000).toFixed(1).replace(".0", "")}M`;
+            if (val >= 1000) return `${(val / 1000).toFixed(1).replace(".0", "")}k`;
+            return val.toString();
+        };
+
         const container = document.createElement("div");
-        container.className = "ytsift-popover-views-container";
+        container.className = "ytsift-popover-duration-container";
+        container.style.width = "12.31em";
 
-        const minInput = document.createElement("input");
-        minInput.id = "ytsift-popover-views-min";
-        minInput.className = "ytsift-views-input";
-        minInput.type = "text";
-        minInput.placeholder = "Min: e.g. 10k";
-        minInput.setAttribute("aria-label", "Minimum views");
+        const minContainer = document.createElement("div");
+        minContainer.style.display = "flex";
+        minContainer.style.flexDirection = "column";
+        minContainer.style.gap = "0.23em";
 
-        const hyphen = document.createElement("span");
-        hyphen.textContent = "-";
+        const minHeader = document.createElement("div");
+        minHeader.className = "ytsift-slider-header";
+        const minLabel = document.createElement("span");
+        minLabel.textContent = "Min Views";
+        const minValSpan = document.createElement("span");
+        minValSpan.id = "ytsift-popover-views-min-val";
+        minValSpan.textContent = "0";
+        minHeader.appendChild(minLabel);
+        minHeader.appendChild(minValSpan);
 
-        const maxInput = document.createElement("input");
-        maxInput.id = "ytsift-popover-views-max";
-        maxInput.className = "ytsift-views-input";
-        maxInput.type = "text";
-        maxInput.placeholder = "Max: e.g. 1M";
-        maxInput.setAttribute("aria-label", "Maximum views");
+        const minSlider = document.createElement("input");
+        minSlider.id = "ytsift-popover-views-min-slider";
+        minSlider.className = "ytsift-slider";
+        minSlider.type = "range";
+        minSlider.min = "0";
+        minSlider.max = (VIEW_STEPS.length - 1).toString();
+        minSlider.step = "1";
+        minSlider.value = "0";
 
-        const handleUpdate = () => {
-            const minStr = minInput.value.trim();
-            const maxStr = maxInput.value.trim();
-            const minVal = minStr ? ViewsParser.parseViews(minStr) : 0;
-            const maxVal = maxStr ? ViewsParser.parseViews(maxStr) : Infinity;
+        minContainer.appendChild(minHeader);
+        minContainer.appendChild(minSlider);
 
-            State.views.min = minVal;
-            State.views.max = maxVal;
-            State.views.active = minVal > 0 || maxVal < Infinity;
+        const maxContainer = document.createElement("div");
+        maxContainer.style.display = "flex";
+        maxContainer.style.flexDirection = "column";
+        maxContainer.style.gap = "0.23em";
 
+        const maxHeader = document.createElement("div");
+        maxHeader.className = "ytsift-slider-header";
+        const maxLabel = document.createElement("span");
+        maxLabel.textContent = "Max Views";
+        const maxValSpan = document.createElement("span");
+        maxValSpan.id = "ytsift-popover-views-max-val";
+        maxValSpan.textContent = "Max";
+        maxHeader.appendChild(maxLabel);
+        maxHeader.appendChild(maxValSpan);
+
+        const maxSlider = document.createElement("input");
+        maxSlider.id = "ytsift-popover-views-max-slider";
+        maxSlider.className = "ytsift-slider";
+        maxSlider.type = "range";
+        maxSlider.min = "0";
+        maxSlider.max = (VIEW_STEPS.length - 1).toString();
+        maxSlider.step = "1";
+        maxSlider.value = (VIEW_STEPS.length - 1).toString();
+
+        maxContainer.appendChild(maxHeader);
+        maxContainer.appendChild(maxSlider);
+
+        container.appendChild(minContainer);
+        container.appendChild(maxContainer);
+        this.viewsPopover.appendChild(container);
+
+        const handleSliderChange = () => {
+            let minIndex = parseInt(minSlider.value);
+            let maxIndex = parseInt(maxSlider.value);
+
+            if (minIndex > maxIndex) {
+                minIndex = maxIndex;
+                minSlider.value = minIndex.toString();
+            }
+
+            const minVal = VIEW_STEPS[minIndex];
+            const maxVal = VIEW_STEPS[maxIndex];
+
+            minValSpan.textContent = formatViewsValue(minVal);
+            maxValSpan.textContent = formatViewsValue(maxVal);
+
+            State.filters.views.setRange(minVal, maxVal);
             UIBuilder.updateViewsChipText();
             FilterEngine.apply();
         };
 
-        minInput.addEventListener("input", handleUpdate);
-        maxInput.addEventListener("input", handleUpdate);
+        minSlider.addEventListener("input", handleSliderChange);
+        maxSlider.addEventListener("input", handleSliderChange);
+    },
 
-        container.appendChild(minInput);
-        container.appendChild(hyphen);
-        container.appendChild(maxInput);
-        this.viewsPopover.appendChild(container);
+    buildWatchedContent() {
+        const container = document.createElement("div");
+        container.className = "ytsift-popover-duration-container";
+
+        const presetsRow = document.createElement("div");
+        presetsRow.className = "ytsift-popover-presets-row";
+
+        const btnAll = document.createElement("button");
+        btnAll.id = "ytsift-popover-watched-all";
+        btnAll.className = "ytsift-popover-preset-btn active";
+        btnAll.textContent = "All";
+
+        const btnUnwatched = document.createElement("button");
+        btnUnwatched.id = "ytsift-popover-watched-unwatched";
+        btnUnwatched.className = "ytsift-popover-preset-btn";
+        btnUnwatched.textContent = "Unwatched";
+
+        const btnWatched = document.createElement("button");
+        btnWatched.id = "ytsift-popover-watched-watched";
+        btnWatched.className = "ytsift-popover-preset-btn";
+        btnWatched.textContent = "Watched";
+
+        presetsRow.appendChild(btnAll);
+        presetsRow.appendChild(btnUnwatched);
+        presetsRow.appendChild(btnWatched);
+
+        const sliderContainer = document.createElement("div");
+        sliderContainer.className = "ytsift-popover-slider-container";
+
+        const sliderHeader = document.createElement("div");
+        sliderHeader.className = "ytsift-slider-header";
+
+        const sliderLabel = document.createElement("span");
+        sliderLabel.textContent = "Threshold";
+
+        const sliderValue = document.createElement("span");
+        sliderValue.id = "ytsift-popover-watched-value";
+        sliderValue.textContent = "10%";
+
+        sliderHeader.appendChild(sliderLabel);
+        sliderHeader.appendChild(sliderValue);
+
+        const slider = document.createElement("input");
+        slider.id = "ytsift-popover-watched-slider";
+        slider.className = "ytsift-slider";
+        slider.type = "range";
+        slider.min = "0";
+        slider.max = "100";
+        slider.step = "5";
+        slider.value = "10";
+
+        sliderContainer.appendChild(sliderHeader);
+        sliderContainer.appendChild(slider);
+
+        container.appendChild(presetsRow);
+        container.appendChild(sliderContainer);
+        this.watchedPopover.appendChild(container);
+
+        const updateUI = () => {
+            const currentType = State.filters.watched.type;
+            const currentPercent = State.filters.watched.percent;
+
+            btnAll.classList.toggle("active", currentType === "all");
+            btnUnwatched.classList.toggle("active", currentType === "unwatched");
+            btnWatched.classList.toggle("active", currentType === "watched");
+
+            slider.value = currentPercent;
+            sliderValue.textContent = `${currentPercent}%`;
+
+            if (currentType === "all") {
+                sliderContainer.style.opacity = "0.5";
+                slider.disabled = true;
+            } else {
+                sliderContainer.style.opacity = "1";
+                slider.disabled = false;
+            }
+        };
+
+        const handleTypeClick = (type) => {
+            State.filters.watched.setCriteria(type, parseInt(slider.value));
+            updateUI();
+            UIBuilder.updateWatchedChipText();
+            FilterEngine.apply();
+        };
+
+        btnAll.addEventListener("click", () => handleTypeClick("all"));
+        btnUnwatched.addEventListener("click", () => handleTypeClick("unwatched"));
+        btnWatched.addEventListener("click", () => handleTypeClick("watched"));
+
+        slider.addEventListener("input", () => {
+            const percent = parseInt(slider.value);
+            sliderValue.textContent = `${percent}%`;
+            if (State.filters.watched.type !== "all") {
+                State.filters.watched.setCriteria(State.filters.watched.type, percent);
+                UIBuilder.updateWatchedChipText();
+                FilterEngine.apply();
+            }
+        });
     },
 
     updateDurationInputs(min, max) {
-        const minInput = this.durationPopover.querySelector("#ytsift-popover-duration-min");
-        const maxInput = this.durationPopover.querySelector("#ytsift-popover-duration-max");
-        if (minInput) minInput.value = min;
-        if (maxInput) maxInput.value = max === Infinity ? "" : max;
+        const minSlider = this.durationPopover.querySelector("#ytsift-popover-duration-min-slider");
+        const maxSlider = this.durationPopover.querySelector("#ytsift-popover-duration-max-slider");
+        const minValSpan = this.durationPopover.querySelector("#ytsift-popover-duration-min-val");
+        const maxValSpan = this.durationPopover.querySelector("#ytsift-popover-duration-max-val");
+
+        const btnShort = this.durationPopover.querySelector("#ytsift-popover-preset-short");
+        const btnMedium = this.durationPopover.querySelector("#ytsift-popover-preset-medium");
+        const btnLong = this.durationPopover.querySelector("#ytsift-popover-preset-long");
+
+        const activePreset = State.filters.duration.preset;
+        if (btnShort) btnShort.classList.toggle("active", activePreset === "short");
+        if (btnMedium) btnMedium.classList.toggle("active", activePreset === "medium");
+        if (btnLong) btnLong.classList.toggle("active", activePreset === "long");
+
+        if (minSlider) minSlider.value = min === "" ? 0 : min;
+        if (minValSpan) minValSpan.textContent = `${min === "" ? 0 : min}m`;
+
+        if (maxSlider) maxSlider.value = (max === Infinity || max === "") ? 120 : max;
+        if (maxValSpan) maxValSpan.textContent = (max === Infinity || max === "") ? "Max" : `${max}m`;
     },
 
-    updateViewsInputs(minStr, maxStr) {
-        const minInput = this.viewsPopover.querySelector("#ytsift-popover-views-min");
-        const maxInput = this.viewsPopover.querySelector("#ytsift-popover-views-max");
-        if (minInput) minInput.value = minStr;
-        if (maxInput) maxInput.value = maxStr;
+    updateViewsInputs(min, max) {
+        const VIEW_STEPS = [0, 100, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000, 5000000, 10000000, Infinity];
+
+        const formatViewsValue = (val) => {
+            if (val === 0) return "0";
+            if (val === Infinity) return "Max";
+            if (val >= 1000000) return `${(val / 1000000).toFixed(1).replace(".0", "")}M`;
+            if (val >= 1000) return `${(val / 1000).toFixed(1).replace(".0", "")}k`;
+            return val.toString();
+        };
+
+        const minSlider = this.viewsPopover.querySelector("#ytsift-popover-views-min-slider");
+        const maxSlider = this.viewsPopover.querySelector("#ytsift-popover-views-max-slider");
+        const minValSpan = this.viewsPopover.querySelector("#ytsift-popover-views-min-val");
+        const maxValSpan = this.viewsPopover.querySelector("#ytsift-popover-views-max-val");
+
+        const actualMin = min === "" ? 0 : min;
+        const actualMax = max === "" ? Infinity : max;
+
+        let minIndex = VIEW_STEPS.indexOf(actualMin);
+        if (minIndex === -1) minIndex = 0;
+
+        let maxIndex = VIEW_STEPS.indexOf(actualMax);
+        if (maxIndex === -1) maxIndex = VIEW_STEPS.length - 1;
+
+        if (minSlider) minSlider.value = minIndex.toString();
+        if (minValSpan) minValSpan.textContent = formatViewsValue(actualMin);
+
+        if (maxSlider) maxSlider.value = maxIndex.toString();
+        if (maxValSpan) maxValSpan.textContent = formatViewsValue(actualMax);
+    },
+
+    updateWatchedInputs(type, percent) {
+        const slider = this.watchedPopover.querySelector("#ytsift-popover-watched-slider");
+        const sliderValue = this.watchedPopover.querySelector("#ytsift-popover-watched-value");
+        const btnAll = this.watchedPopover.querySelector("#ytsift-popover-watched-all");
+        const btnUnwatched = this.watchedPopover.querySelector("#ytsift-popover-watched-unwatched");
+        const btnWatched = this.watchedPopover.querySelector("#ytsift-popover-watched-watched");
+        const sliderContainer = this.watchedPopover.querySelector(".ytsift-popover-slider-container");
+
+        if (slider) slider.value = percent;
+        if (sliderValue) sliderValue.textContent = `${percent}%`;
+
+        if (btnAll) btnAll.classList.toggle("active", type === "all");
+        if (btnUnwatched) btnUnwatched.classList.toggle("active", type === "unwatched");
+        if (btnWatched) btnWatched.classList.toggle("active", type === "watched");
+
+        if (sliderContainer) {
+            if (type === "all") {
+                sliderContainer.style.opacity = "0.5";
+                if (slider) slider.disabled = true;
+            } else {
+                sliderContainer.style.opacity = "1";
+                if (slider) slider.disabled = false;
+            }
+        }
     },
 
     showDuration(target) {
@@ -1077,6 +1425,15 @@ const PopoverManager = {
         }
     },
 
+    showWatched(target) {
+        this.position(this.watchedPopover, target);
+        try {
+            this.watchedPopover.showPopover();
+        } catch {
+            this.watchedPopover.style.display = "block";
+        }
+    },
+
     isDurationOpen() {
         return this.durationPopover && (this.durationPopover.matches(":popover-open") || this.durationPopover.style.display === "block");
     },
@@ -1085,13 +1442,19 @@ const PopoverManager = {
         return this.viewsPopover && (this.viewsPopover.matches(":popover-open") || this.viewsPopover.style.display === "block");
     },
 
+    isWatchedOpen() {
+        return this.watchedPopover && (this.watchedPopover.matches(":popover-open") || this.watchedPopover.style.display === "block");
+    },
+
     hideAll() {
         try {
             this.durationPopover?.hidePopover();
             this.viewsPopover?.hidePopover();
+            this.watchedPopover?.hidePopover();
         } catch {
             if (this.durationPopover) this.durationPopover.style.display = "none";
             if (this.viewsPopover) this.viewsPopover.style.display = "none";
+            if (this.watchedPopover) this.watchedPopover.style.display = "none";
         }
     },
 };
@@ -1100,18 +1463,6 @@ const FilterEngine = {
     apply() {
         const cards = document.querySelectorAll(CONFIG.SELECTORS.VIDEO_CARD);
         let matchCount = 0;
-
-        const allWords = State.query.toLowerCase().split(/\s+/).filter(Boolean);
-        const positiveWords = [];
-        const negativeWords = [];
-
-        for (const word of allWords) {
-            if (word.startsWith("-") && word.length > 1) {
-                negativeWords.push(word.slice(1));
-            } else {
-                positiveWords.push(word);
-            }
-        }
 
         cards.forEach((card) => {
             const cardData = DataModelResolver.getCardData(card);
@@ -1199,33 +1550,20 @@ const FilterEngine = {
                 card.__ytsift_views = views;
             }
 
-            // Watched status must be queried dynamically to reflect live watch state changes
-            const isWatched = (cardData ? DataModelResolver.getVideoWatched(cardData) : false) || card.querySelector(CONFIG.SELECTORS.VIDEO_WATCHED) !== null;
+            // Watched percentage must be queried dynamically to reflect live watch state changes
+            const watchedPercent = DataModelResolver.getVideoWatchedPercent(cardData, card);
 
-            let textMatch = true;
-            if (positiveWords.length > 0 || negativeWords.length > 0) {
-                const titleLower = title.toLowerCase();
-                const matchesPositive = positiveWords.every((word) => titleLower.includes(word));
-                const matchesNegative = negativeWords.some((word) => titleLower.includes(word));
-                textMatch = matchesPositive && !matchesNegative;
-            }
+            const metadata = {
+                title,
+                durationSec,
+                views,
+                watchedPercent,
+            };
 
-            let watchedMatch = true;
-            if (State.hideWatched && isWatched) {
-                watchedMatch = false;
-            }
-
-            let durationMatch = true;
-            if (State.duration.preset !== null) {
-                const minSec = State.duration.min * 60;
-                const maxSec = State.duration.max * 60;
-                durationMatch = durationSec >= minSec && durationSec <= maxSec;
-            }
-
-            let viewsMatch = true;
-            if (State.views.active) {
-                viewsMatch = views >= State.views.min && views <= State.views.max;
-            }
+            const textMatch = State.filters.text.matches(metadata);
+            const watchedMatch = State.filters.watched.matches(metadata);
+            const durationMatch = State.filters.duration.matches(metadata);
+            const viewsMatch = State.filters.views.matches(metadata);
 
             const shouldHide = !(textMatch && watchedMatch && durationMatch && viewsMatch);
             card.classList.toggle(CONFIG.CLASSES.HIDDEN, shouldHide);
@@ -1303,7 +1641,7 @@ const UIBuilder = {
         input.type = "text";
         input.className = CONFIG.CLASSES.SEARCH_INPUT;
         input.placeholder = "Filter by title...";
-        input.value = State.query;
+        input.value = State.filters.text.query;
         input.setAttribute("aria-label", "Filter videos by keyword");
 
         const clearBtn = document.createElement("button");
@@ -1315,7 +1653,7 @@ const UIBuilder = {
         searchContainer.appendChild(input);
         searchContainer.appendChild(clearBtn);
 
-        const watchedChip = DOMRenderer.createChip({ id: "ytsift-chip-watched", text: "Unwatched", pressed: State.hideWatched });
+        const watchedChip = DOMRenderer.createChip({ id: "ytsift-chip-watched", text: "Status ▾", pressed: State.filters.watched.isActive() });
 
         secGeneral.appendChild(searchContainer);
         secGeneral.appendChild(watchedChip);
@@ -1330,7 +1668,7 @@ const UIBuilder = {
         const secDuration = document.createElement("div");
         secDuration.className = "ytsift-section-duration";
 
-        const durationChip = DOMRenderer.createChip({ id: "ytsift-chip-duration", text: "Duration ▾", pressed: State.duration.preset !== null });
+        const durationChip = DOMRenderer.createChip({ id: "ytsift-chip-duration", text: "Duration ▾", pressed: State.filters.duration.isActive() });
         secDuration.appendChild(durationChip);
         wrapper.appendChild(secDuration);
 
@@ -1343,7 +1681,7 @@ const UIBuilder = {
         const secViews = document.createElement("div");
         secViews.className = "ytsift-section-views";
 
-        const viewsChip = DOMRenderer.createChip({ id: "ytsift-chip-views", text: "Views ▾", pressed: State.views.active });
+        const viewsChip = DOMRenderer.createChip({ id: "ytsift-chip-views", text: "Views ▾", pressed: State.filters.views.isActive() });
         secViews.appendChild(viewsChip);
         wrapper.appendChild(secViews);
 
@@ -1375,14 +1713,39 @@ const UIBuilder = {
         State.lastCardCount = document.querySelectorAll(CONFIG.SELECTORS.VIDEO_CARD).length;
 
         this.wireEvents(input, clearBtn, watchedChip, durationChip, viewsChip, clearAllBtn);
+        this.updateWatchedChipText();
 
         FilterEngine.apply();
+    },
+
+    updateWatchedChipText() {
+        const chip = document.getElementById("ytsift-chip-watched");
+        if (!chip) return;
+        if (!State.filters.watched.isActive()) {
+            chip.textContent = "Status ▾";
+            chip.classList.remove(CONFIG.CLASSES.ACTIVE);
+            chip.setAttribute("aria-pressed", "false");
+        } else {
+            chip.classList.add(CONFIG.CLASSES.ACTIVE);
+            chip.setAttribute("aria-pressed", "true");
+            const type = State.filters.watched.type;
+            const percent = State.filters.watched.percent;
+            if (type === "watched") {
+                chip.textContent = `Watched (>= ${percent}%) ▾`;
+            } else if (type === "unwatched") {
+                chip.textContent = `Unwatched (< ${percent}%) ▾`;
+            } else {
+                chip.textContent = "Status ▾";
+                chip.classList.remove(CONFIG.CLASSES.ACTIVE);
+                chip.setAttribute("aria-pressed", "false");
+            }
+        }
     },
 
     updateDurationChipText() {
         const chip = document.getElementById("ytsift-chip-duration");
         if (!chip) return;
-        if (State.duration.preset === null) {
+        if (State.filters.duration.preset === null) {
             chip.textContent = "Duration ▾";
             chip.classList.remove(CONFIG.CLASSES.ACTIVE);
             chip.setAttribute("aria-pressed", "false");
@@ -1390,15 +1753,15 @@ const UIBuilder = {
             chip.classList.add(CONFIG.CLASSES.ACTIVE);
             chip.setAttribute("aria-pressed", "true");
             let label = "";
-            if (State.duration.preset === "short" && State.duration.min === 0 && State.duration.max === 4) {
+            if (State.filters.duration.preset === "short" && State.filters.duration.min === 0 && State.filters.duration.max === 4) {
                 label = "Short";
-            } else if (State.duration.preset === "medium" && State.duration.min === 4 && State.duration.max === 20) {
+            } else if (State.filters.duration.preset === "medium" && State.filters.duration.min === 4 && State.filters.duration.max === 20) {
                 label = "Medium";
-            } else if (State.duration.preset === "long" && State.duration.min === 20 && State.duration.max === Infinity) {
+            } else if (State.filters.duration.preset === "long" && State.filters.duration.min === 20 && State.filters.duration.max === Infinity) {
                 label = "Long";
             } else {
-                const maxText = State.duration.max === Infinity ? "+" : `-${State.duration.max}`;
-                label = `${State.duration.min}${maxText}m`;
+                const maxText = State.filters.duration.max === Infinity ? "+" : `-${State.filters.duration.max}`;
+                label = `${State.filters.duration.min}${maxText}m`;
             }
             chip.textContent = `Duration: ${label} ▾`;
         }
@@ -1413,26 +1776,26 @@ const UIBuilder = {
     updateViewsChipText() {
         const chip = document.getElementById("ytsift-chip-views");
         if (!chip) return;
-        if (!State.views.active) {
+        if (!State.filters.views.isActive()) {
             chip.textContent = "Views ▾";
             chip.classList.remove(CONFIG.CLASSES.ACTIVE);
             chip.setAttribute("aria-pressed", "false");
         } else {
             chip.classList.add(CONFIG.CLASSES.ACTIVE);
             chip.setAttribute("aria-pressed", "true");
-            if (State.views.min === 0 && State.views.max === Infinity) {
+            if (State.filters.views.min === 0 && State.filters.views.max === Infinity) {
                 chip.textContent = "Views ▾";
                 chip.classList.remove(CONFIG.CLASSES.ACTIVE);
                 chip.setAttribute("aria-pressed", "false");
-                State.views.active = false;
+                State.filters.views.reset();
             } else {
                 let label = "";
-                if (State.views.min > 0 && State.views.max === Infinity) {
-                    label = `>${this.formatViewsLabel(State.views.min)}`;
-                } else if (State.views.min === 0 && State.views.max < Infinity) {
-                    label = `<${this.formatViewsLabel(State.views.max)}`;
+                if (State.filters.views.min > 0 && State.filters.views.max === Infinity) {
+                    label = `>${this.formatViewsLabel(State.filters.views.min)}`;
+                } else if (State.filters.views.min === 0 && State.filters.views.max < Infinity) {
+                    label = `<${this.formatViewsLabel(State.filters.views.max)}`;
                 } else {
-                    label = `${this.formatViewsLabel(State.views.min)}-${this.formatViewsLabel(State.views.max)}`;
+                    label = `${this.formatViewsLabel(State.filters.views.min)}-${this.formatViewsLabel(State.filters.views.max)}`;
                 }
                 chip.textContent = `Views: ${label} ▾`;
             }
@@ -1441,14 +1804,14 @@ const UIBuilder = {
 
     wireEvents(input, clearBtn, watchedChip, durationChip, viewsChip, clearAllBtn) {
         input.addEventListener("input", () => {
-            State.query = input.value;
+            State.filters.text.setQuery(input.value);
             clearBtn.style.visibility = input.value.length > 0 ? "visible" : "hidden";
             FilterEngine.apply();
         });
 
         clearBtn.addEventListener("click", () => {
             input.value = "";
-            State.query = "";
+            State.filters.text.reset();
             clearBtn.style.visibility = "hidden";
             FilterEngine.apply();
             input.focus();
@@ -1459,7 +1822,7 @@ const UIBuilder = {
                 input.blur();
             } else if (e.key === "Escape") {
                 input.value = "";
-                State.query = "";
+                State.filters.text.reset();
                 clearBtn.style.visibility = "hidden";
                 FilterEngine.apply();
                 input.blur();
@@ -1467,10 +1830,18 @@ const UIBuilder = {
         });
 
         watchedChip.addEventListener("click", () => {
-            State.hideWatched = !State.hideWatched;
-            watchedChip.classList.toggle(CONFIG.CLASSES.ACTIVE, State.hideWatched);
-            watchedChip.setAttribute("aria-pressed", State.hideWatched ? "true" : "false");
-            FilterEngine.apply();
+            const wasJustClosed = Date.now() - PopoverManager.lastWatchedClosedTime < 150;
+            PopoverManager.hideAll();
+
+            if (wasJustClosed) {
+                return;
+            }
+
+            PopoverManager.updateWatchedInputs(
+                State.filters.watched.type,
+                State.filters.watched.percent,
+            );
+            PopoverManager.showWatched(watchedChip);
         });
 
         durationChip.addEventListener("click", () => {
@@ -1482,8 +1853,8 @@ const UIBuilder = {
             }
 
             PopoverManager.updateDurationInputs(
-                State.duration.min === 0 && State.duration.max === Infinity ? "" : State.duration.min,
-                State.duration.max === Infinity ? "" : State.duration.max,
+                !State.filters.duration.isActive() ? "" : State.filters.duration.min,
+                State.filters.duration.max === Infinity ? "" : State.filters.duration.max,
             );
             PopoverManager.showDuration(durationChip);
         });
@@ -1496,7 +1867,10 @@ const UIBuilder = {
                 return;
             }
 
-            PopoverManager.updateViewsInputs(State.views.min === 0 ? "" : State.views.min, State.views.max === Infinity ? "" : State.views.max);
+            PopoverManager.updateViewsInputs(
+                !State.filters.views.isActive() ? "" : State.filters.views.min,
+                State.filters.views.max === Infinity ? "" : State.filters.views.max,
+            );
             PopoverManager.showViews(viewsChip);
         });
 
@@ -1516,6 +1890,7 @@ const UIBuilder = {
             PopoverManager.hideAll();
             PopoverManager.updateDurationInputs("", "");
             PopoverManager.updateViewsInputs("", "");
+            PopoverManager.updateWatchedInputs("all", 10);
 
             const btnShort = PopoverManager.durationPopover.querySelector("#ytsift-popover-preset-short");
             const btnMedium = PopoverManager.durationPopover.querySelector("#ytsift-popover-preset-medium");
@@ -1527,6 +1902,7 @@ const UIBuilder = {
             State.reset();
             this.updateDurationChipText();
             this.updateViewsChipText();
+            this.updateWatchedChipText();
             FilterEngine.apply();
         });
     },
