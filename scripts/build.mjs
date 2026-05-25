@@ -11,6 +11,7 @@ const BANNER = readFileSync(resolve(root, "src/meta.js"), "utf-8").trim();
 // Each entry is relative to the project root.
 const FILES = [
     "src/config.js",
+    "src/core/settings.js",
     "src/ui/style-manager.js",
     "src/filters/base.js",
     "src/filters/text.js",

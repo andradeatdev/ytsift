@@ -1,10 +1,11 @@
+import { Settings } from "@/core/settings.js";
 import { BaseFilter } from "@/filters/base.js";
 
 export class WatchedFilter extends BaseFilter {
 	constructor() {
 		super();
 		this.type = "all"; // "all" | "watched" | "unwatched"
-		this.percent = 10; // threshold percentage (default 10%)
+		this.percent = Settings.defaultWatched; // threshold percentage from settings
 	}
 
 	setCriteria(type, percent) {
@@ -15,7 +16,7 @@ export class WatchedFilter extends BaseFilter {
 
 	reset() {
 		this.type = "all";
-		this.percent = 10;
+		this.percent = Settings.defaultWatched;
 		this.active = false;
 	}
 
