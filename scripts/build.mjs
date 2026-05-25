@@ -5,7 +5,10 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
 
-const BANNER = readFileSync(resolve(root, "src/meta.js"), "utf-8").trim();
+const pkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf-8"));
+const BANNER = readFileSync(resolve(root, "src/meta.js"), "utf-8")
+    .replace(/([\/\/\s]*@version\s+)\S+/, `$1${pkg.version}`)
+    .trim();
 
 // Dependency order — modules listed before their dependents.
 // Each entry is relative to the project root.

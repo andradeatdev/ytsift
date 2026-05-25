@@ -15,6 +15,7 @@
     "tsc": "tsc",
     "validate": "pnpm check && pnpm lint:metadata && pnpm tsc",
     "validate:write": "pnpm check:write && pnpm lint:metadata:write && pnpm tsc",
+    "check:version": "node scripts/check-version.mjs",
     "prepare": "husky"
   },
   "devDependencies": {
