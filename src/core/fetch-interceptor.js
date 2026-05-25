@@ -1,4 +1,4 @@
-import { CONFIG } from "@/config.js";
+import { Settings } from "@/core/settings.js";
 import { State } from "@/core/state.js";
 
 export const FetchInterceptor = {
@@ -26,8 +26,8 @@ export const FetchInterceptor = {
 				if (isBrowseReq && isVideosTab && isPost && areFiltersActive) {
 					const now = Date.now();
 					const timeSinceLast = now - State.lastFetchTime;
-					if (timeSinceLast < CONFIG.THROTTLE_DELAY) {
-						const waitTime = CONFIG.THROTTLE_DELAY - timeSinceLast;
+					if (timeSinceLast < Settings.requestThrottle) {
+						const waitTime = Settings.requestThrottle - timeSinceLast;
 						return new Promise((resolve) => setTimeout(resolve, waitTime)).then(
 							() => {
 								State.lastFetchTime = Date.now();

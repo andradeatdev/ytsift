@@ -1,15 +1,34 @@
 import { CONFIG } from "@/config.js";
 import { FetchInterceptor } from "@/core/fetch-interceptor.js";
 import { FilterEngine } from "@/core/filter-engine.js";
+import { Settings } from "@/core/settings.js";
 import { State } from "@/core/state.js";
 import { UIBuilder } from "@/ui/builder.js";
 import { PopoverManager } from "@/ui/popover-manager.js";
 import { StyleManager } from "@/ui/style-manager.js";
 
+function throttle(func, limit) {
+	let inThrottle;
+	return function (...args) {
+		if (!inThrottle) {
+			func.apply(this, args);
+			inThrottle = true;
+			setTimeout(() => {
+				inThrottle = false;
+			}, limit);
+		}
+	};
+}
+
 export const AppObserver = {
 	observer: null,
+	throttledApply: null,
 
 	init() {
+		this.throttledApply = throttle(() => {
+			FilterEngine.apply();
+		}, 250);
+
 		this.observer = new MutationObserver((mutations) =>
 			this.handleMutations(mutations),
 		);
@@ -52,7 +71,7 @@ export const AppObserver = {
 			).length;
 			if (currentCardCount !== State.lastCardCount) {
 				State.lastCardCount = currentCardCount;
-				FilterEngine.apply();
+				this.throttledApply();
 			}
 		}
 	},
@@ -60,6 +79,7 @@ export const AppObserver = {
 
 export const App = {
 	init() {
+		Settings.load();
 		StyleManager.inject();
 		PopoverManager.init();
 		FetchInterceptor.install();
