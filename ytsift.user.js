@@ -37,6 +37,64 @@ const CONFIG = {
 	},
 };
 
+const Settings = {
+	queueThrottle: 150,
+	requestThrottle: 1500,
+	defaultWatched: 10,
+	showStatusChip: true,
+	showDurationChip: true,
+	showAgeChip: true,
+	showViewsChip: true,
+	durationAdvancedMode: false,
+
+	load() {
+		try {
+			const saved = localStorage.getItem("ytsift-settings");
+			if (saved) {
+				const parsed = JSON.parse(saved);
+				if (parsed.queueThrottle !== undefined)
+					this.queueThrottle = Number(parsed.queueThrottle);
+				if (parsed.requestThrottle !== undefined)
+					this.requestThrottle = Number(parsed.requestThrottle);
+				if (parsed.defaultWatched !== undefined)
+					this.defaultWatched = Number(parsed.defaultWatched);
+				if (parsed.showStatusChip !== undefined)
+					this.showStatusChip = Boolean(parsed.showStatusChip);
+				if (parsed.showDurationChip !== undefined)
+					this.showDurationChip = Boolean(parsed.showDurationChip);
+				if (parsed.showAgeChip !== undefined)
+					this.showAgeChip = Boolean(parsed.showAgeChip);
+				if (parsed.showViewsChip !== undefined)
+					this.showViewsChip = Boolean(parsed.showViewsChip);
+				if (parsed.durationAdvancedMode !== undefined)
+					this.durationAdvancedMode = Boolean(parsed.durationAdvancedMode);
+			}
+		} catch (e) {
+			console.error("Failed to load settings", e);
+		}
+	},
+
+	save() {
+		try {
+			localStorage.setItem(
+				"ytsift-settings",
+				JSON.stringify({
+					queueThrottle: this.queueThrottle,
+					requestThrottle: this.requestThrottle,
+					defaultWatched: this.defaultWatched,
+					showStatusChip: this.showStatusChip,
+					showDurationChip: this.showDurationChip,
+					showAgeChip: this.showAgeChip,
+					showViewsChip: this.showViewsChip,
+					durationAdvancedMode: this.durationAdvancedMode,
+				}),
+			);
+		} catch (e) {
+			console.error("Failed to save settings", e);
+		}
+	},
+};
+
 const StyleManager = {
 	inject() {
 		GM_addStyle(`
@@ -55,22 +113,14 @@ const StyleManager = {
                 --ytsift-popover-font-size: 13px;
 
                 /* Controls Layout (in ems, relative to --ytsift-base-font-size) */
-                --ytsift-controls-height: 3.43em; /* 48px */
-                --ytsift-chip-height: 2.29em; /* 32px */
+                --ytsift-controls-height: initial;
+                --ytsift-chip-height: 2.29em;
                 
-                /* Popover system (in ems, relative to --ytsift-popover-font-size) */
-                --ytsift-popover-bg: var(--yt-sys-color-baseline--menu-background, var(--yt-spec-menu-background, rgba(255, 255, 255, 0.95)));
-                --ytsift-popover-shadow: 0 0.31em 1.54em rgba(0, 0, 0, 0.15); /* 0 4px 20px */
-                --ytsift-popover-padding: 0.92em; /* 12px */
-                --ytsift-popover-radius: 0.77em; /* 10px */
-                --ytsift-popover-blur: 12px;
-                
-                /* Input layout (in ems, relative to --ytsift-popover-font-size) */
-                --ytsift-input-radius: 0.46em; /* 6px */
-            }
-
-            .ytChipBarViewModelChipBarScrollContainer {
-                align-items: end !important;
+                /* Native Classic Popover Tokens */
+                --ytsift-pop-bg: #282828;
+                --ytsift-pop-border: rgba(255, 255, 255, 0.1);
+                --ytsift-accent: #3ea6ff;
+                --ytsift-accent-text: #0f0f0f;
             }
 
             .ytsift-controls-wrapper {
@@ -83,48 +133,18 @@ const StyleManager = {
                 font-size: var(--ytsift-base-font-size);
             }
 
-            .ytsift-section-general,
-            .ytsift-section-duration,
-            .ytsift-section-views,
-            .ytsift-section-actions {
-                position: relative;
-                padding-top: 1em; /* 14px */
+            .ytsift-filters-left {
                 display: inline-flex;
                 align-items: center;
                 gap: 0.57em; /* 8px */
+                flex-shrink: 0;
             }
 
-            .ytsift-section-general::before,
-            .ytsift-section-duration::before,
-            .ytsift-section-views::before,
-            .ytsift-section-actions::before {
-                position: absolute;
-                top: 0;
-                left: 0;
-                font-size: 0.64em; /* 9px */
-                font-weight: 700;
-                color: var(--ytsift-text-disabled);
-                letter-spacing: 0.06em; /* 0.8px */
-                text-transform: uppercase;
-                font-family: "Roboto", "Arial", sans-serif;
-                line-height: 1;
-                pointer-events: none;
-            }
-
-            .ytsift-section-general::before {
-                content: "GENERAL";
-            }
-
-            .ytsift-section-duration::before {
-                content: "TIME";
-            }
-
-            .ytsift-section-views::before {
-                content: "VIEWS";
-            }
-
-            .ytsift-section-actions::before {
-                content: "STATUS";
+            .ytsift-actions-right {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.57em; /* 8px */
+                flex-shrink: 0;
             }
 
             .ytsift-search-container {
@@ -269,6 +289,53 @@ const StyleManager = {
                 user-select: none;
             }
 
+            .ytsift-clear-all-btn,
+            .ytsift-enqueue-all-btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                background-color: transparent;
+                border-radius: 0.57em; /* 8px */
+                height: var(--ytsift-chip-height);
+                padding: 0 0.86em; /* 12px */
+                font-family: "Roboto", "Arial", sans-serif;
+                font-size: 1em; /* 14px */
+                font-weight: 500;
+                cursor: pointer;
+                border: none;
+                box-sizing: border-box;
+                transition: background-color 0.2s, color 0.2s;
+                user-select: none;
+            }
+
+            .ytsift-clear-all-btn {
+                color: var(--ytsift-text-secondary);
+            }
+            .ytsift-clear-all-btn:hover {
+                background-color: var(--ytsift-hover-bg);
+                color: var(--ytsift-text-primary);
+            }
+
+            .ytsift-enqueue-all-btn {
+                color: var(--ytsift-accent);
+            }
+            .ytsift-enqueue-all-btn:hover {
+                background-color: rgba(62, 166, 255, 0.15);
+            }
+
+            .ytsift-clear-all-btn:focus-visible,
+            .ytsift-enqueue-all-btn:focus-visible {
+                outline: 2px solid var(--ytsift-text-primary);
+                outline-offset: 2px;
+            }
+
+            .ytsift-clear-all-btn:disabled,
+            .ytsift-enqueue-all-btn:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+                background-color: transparent !important;
+            }
+
             .ytsift-separator {
                 width: 0.07em; /* 1px */
                 height: 1.43em; /* 20px */
@@ -279,144 +346,66 @@ const StyleManager = {
 
             .ytsift-popover {
                 position: absolute;
-                background-color: var(--ytsift-popover-bg);
-                border: 1px solid var(--ytsift-outline);
-                border-radius: var(--ytsift-popover-radius);
-                box-shadow: var(--ytsift-popover-shadow);
-                z-index: 10000;
-                padding: var(--ytsift-popover-padding);
+                background: var(--ytsift-pop-bg, #282828);
+                border: 1px solid var(--ytsift-pop-border, rgba(255, 255, 255, 0.1));
+                border-radius: 12px;
+                box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+                padding: 16px;
+                width: 260px;
                 box-sizing: border-box;
+                z-index: 10000;
+                font-family: "Roboto", Arial, sans-serif;
                 display: none;
-                backdrop-filter: blur(var(--ytsift-popover-blur)) saturate(180%);
-                -webkit-backdrop-filter: blur(var(--ytsift-popover-blur)) saturate(180%);
-                font-size: var(--ytsift-popover-font-size);
-            }
 
+                --ytsift-text-primary: #f1f1f1;
+                --ytsift-text-secondary: #aaaaaa;
+                --ytsift-hover-bg: rgba(255, 255, 255, 0.15);
+            }
             .ytsift-popover:popover-open {
                 display: block;
             }
 
-            .ytsift-popover-duration-container {
+            .segmented-control {
+                display: flex;
+                background: rgba(0, 0, 0, 0.3);
+                border-radius: 8px;
+                padding: 3px;
+                margin-bottom: 16px;
+                border: 1px solid var(--ytsift-pop-border);
+            }
+            .segmented-btn {
+                flex: 1;
+                background: transparent;
+                border: none;
+                border-radius: 6px;
+                padding: 6px 0;
+                font-size: 12px;
+                font-weight: 500;
+                color: var(--ytsift-text-secondary);
+                cursor: pointer;
+                transition: 0.2s;
+                text-align: center;
+            }
+            .segmented-btn.active {
+                background: #ffffff;
+                color: var(--ytsift-accent-text);
+                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            }
+
+            .slider-row {
                 display: flex;
                 flex-direction: column;
-                gap: 0.62em; /* 8px */
+                gap: 8px;
+                margin-bottom: 16px;
             }
-
-            .ytsift-popover-presets-row {
-                display: flex;
-                gap: 0.46em; /* 6px */
+            .slider-row:last-of-type {
+                margin-bottom: 0;
             }
-
-            .ytsift-popover-inputs-row {
-                display: flex;
-                align-items: center;
-                gap: 0.46em; /* 6px */
-                justify-content: center;
-                border-top: 1px solid var(--ytsift-outline);
-                padding-top: 0.62em; /* 8px */
-                margin-top: 0.15em; /* 2px */
-            }
-
-            .ytsift-popover-inputs-row span {
-                font-size: 0.92em; /* 12px */
-                font-family: "Roboto", "Arial", sans-serif;
-                color: var(--ytsift-text-secondary);
-            }
-
-            .ytsift-popover-views-container {
-                display: flex;
-                align-items: center;
-                gap: 0.46em; /* 6px */
-            }
-
-            .ytsift-popover-views-container span {
-                font-size: 0.92em; /* 12px */
-                font-family: "Roboto", "Arial", sans-serif;
-                color: var(--ytsift-text-secondary);
-            }
-
-            .ytsift-popover-preset-btn {
-                background-color: var(--ytsift-tonal-bg);
-                color: var(--ytsift-text-primary);
-                border: 1px solid transparent;
-                border-radius: var(--ytsift-input-radius);
-                padding: 0.46em 0.92em; /* 6px 12px */
-                font-size: 0.92em; /* 12px */
-                font-weight: 500;
-                font-family: "Roboto", "Arial", sans-serif;
-                cursor: pointer;
-                transition: background-color 0.2s, border-color 0.2s;
-            }
-
-            .ytsift-popover-preset-btn:hover {
-                background-color: var(--ytsift-hover-bg);
-            }
-
-            .ytsift-popover-preset-btn.active {
-                background-color: var(--ytsift-text-primary);
-                color: var(--ytsift-text-primary-inverse);
-            }
-
-            .ytsift-popover-preset-btn.active:hover {
-                background-color: var(--yt-sys-color-baseline--mono-filled-hover, #333);
-            }
-
-            .ytsift-clear-all-btn {
-                border: none;
-                background: transparent;
-                color: var(--yt-sys-color-baseline--call-to-action, #3ea6ff);
-                cursor: pointer;
-                font-family: "Roboto", "Arial", sans-serif;
-                font-size: 0.93em; /* 13px */
-                font-weight: 500;
-                margin-left: 0.57em; /* 8px */
-                padding: 0 0.29em; /* 4px */
-                height: var(--ytsift-chip-height);
-                display: inline-flex;
-                align-items: center;
-                border-radius: 4px;
-                transition: background-color 0.2s;
-            }
-
-            .ytsift-clear-all-btn:hover {
-                background-color: var(--ytsift-hover-bg);
-            }
-
-            .ytsift-enqueue-all-btn {
-                border: none;
-                background: transparent;
-                color: var(--yt-sys-color-baseline--call-to-action, #3ea6ff);
-                cursor: pointer;
-                font-family: "Roboto", "Arial", sans-serif;
-                font-size: 0.93em; /* 13px */
-                font-weight: 500;
-                margin-left: 0.57em; /* 8px */
-                padding: 0 0.29em; /* 4px */
-                height: var(--ytsift-chip-height);
-                display: inline-flex;
-                align-items: center;
-                border-radius: 4px;
-                transition: background-color 0.2s, opacity 0.2s;
-            }
-
-            .ytsift-enqueue-all-btn:hover:not(:disabled) {
-                background-color: var(--ytsift-hover-bg);
-            }
-
-            .ytsift-popover-slider-container {
-                display: flex;
-                flex-direction: column;
-                gap: 0.46em; /* 6px */
-                border-top: 1px solid var(--ytsift-outline);
-                padding-top: 0.62em; /* 8px */
-                margin-top: 0.15em; /* 2px */
-            }
-
-            .ytsift-slider-header {
+            .slider-header {
                 display: flex;
                 justify-content: space-between;
-                font-size: 0.92em; /* 12px */
-                font-family: "Roboto", "Arial", sans-serif;
+                align-items: center;
+                font-size: 12px;
                 color: var(--ytsift-text-secondary);
             }
 
@@ -425,42 +414,211 @@ const StyleManager = {
                 width: 100%;
                 height: 4px;
                 border-radius: 2px;
-                background: var(--ytsift-tonal-bg);
                 outline: none;
-                margin: 0.62em 0;
+                margin: 4px 0;
+                background: linear-gradient(to right, var(--ytsift-accent) var(--slider-progress, 0%), rgba(255,255,255,0.1) var(--slider-progress, 0%));
             }
-
             .ytsift-slider::-webkit-slider-thumb {
                 -webkit-appearance: none;
-                appearance: none;
-                width: 12px;
-                height: 12px;
+                width: 14px;
+                height: 14px;
                 border-radius: 50%;
-                background: var(--ytsift-text-primary);
+                background: var(--ytsift-accent);
                 cursor: pointer;
                 transition: transform 0.1s ease;
             }
-
             .ytsift-slider::-webkit-slider-thumb:hover {
                 transform: scale(1.2);
             }
-
             .ytsift-slider::-moz-range-thumb {
-                width: 12px;
-                height: 12px;
+                width: 14px;
+                height: 14px;
                 border: none;
                 border-radius: 50%;
-                background: var(--ytsift-text-primary);
+                background: var(--ytsift-accent);
                 cursor: pointer;
                 transition: transform 0.1s ease;
             }
-
             .ytsift-slider::-moz-range-thumb:hover {
                 transform: scale(1.2);
             }
 
+            input[type=number]::-webkit-inner-spin-button, 
+            input[type=number]::-webkit-outer-spin-button { 
+                -webkit-appearance: none; 
+                margin: 0; 
+            }
+            input[type=number] {
+                -moz-appearance: textfield;
+                font-variant-numeric: tabular-nums;
+            }
+
+            .num-outlined {
+                display: inline-flex;
+                align-items: stretch;
+                border: 1px solid var(--ytsift-pop-border);
+                border-radius: 4px;
+                height: 26px;
+                overflow: hidden;
+                background: rgba(0, 0, 0, 0.2);
+                transition: border-color 0.2s;
+                width: 96px;
+                flex-shrink: 0;
+                box-sizing: border-box;
+            }
+            .num-outlined * {
+                box-sizing: border-box;
+            }
+            .num-outlined:focus-within {
+                border-color: var(--ytsift-accent);
+            }
+            .num-outlined button {
+                background: transparent;
+                border: none;
+                color: var(--ytsift-text-primary);
+                width: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                font-size: 14px;
+                padding: 0;
+                transition: background 0.2s, color 0.2s;
+            }
+            .num-outlined button:hover {
+                background: var(--ytsift-hover-bg);
+                color: var(--ytsift-accent);
+            }
+            .num-outlined input {
+                flex: 1;
+                min-width: 0;
+                text-align: center;
+                background: transparent;
+                border: none;
+                border-left: 1px solid var(--ytsift-pop-border);
+                border-right: 1px solid var(--ytsift-pop-border);
+                color: var(--ytsift-text-primary);
+                font-size: 12px;
+                font-weight: 500;
+                outline: none;
+            }
+
+            .popover-footer {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-top: 16px;
+                padding-top: 12px;
+                border-top: 1px solid var(--ytsift-pop-border);
+            }
+
+            .toggle-mode-btn {
+                background: transparent;
+                border: none;
+                color: var(--ytsift-accent);
+                font-size: 11px;
+                font-weight: 500;
+                text-transform: uppercase;
+                cursor: pointer;
+                padding: 0;
+                text-align: left;
+            }
+            .toggle-mode-btn:hover {
+                opacity: 0.8;
+            }
+
+            .clear-filter-btn {
+                background: transparent;
+                border: none;
+                color: var(--ytsift-accent);
+                font-size: 11px;
+                font-weight: 500;
+                text-transform: uppercase;
+                cursor: pointer;
+                padding: 0;
+                text-align: right;
+            }
+            .clear-filter-btn:hover {
+                opacity: 0.8;
+            }
+
             ytd-rich-item-renderer.ytsift-hidden {
                 display: none !important;
+            }
+
+            /* Settings styles */
+            .ytsift-settings-btn {
+                background: transparent;
+                border: none;
+                color: var(--ytsift-text-primary);
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                cursor: pointer;
+            }
+            .ytsift-settings-btn:hover {
+                background-color: var(--ytsift-hover-bg);
+            }
+            .ytsift-settings-btn svg {
+                width: 20px;
+                height: 20px;
+                fill: currentColor;
+            }
+
+            .ytsift-popover.right-align {
+                left: auto;
+                right: 0;
+            }
+
+            .settings-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 8px 0;
+                border-bottom: 1px solid var(--ytsift-pop-border);
+            }
+            .settings-item:last-child {
+                border-bottom: none;
+            }
+            .settings-label {
+                font-size: 13px;
+                color: var(--ytsift-text-primary);
+            }
+            .settings-desc {
+                font-size: 11px;
+                color: var(--ytsift-text-disabled);
+                margin-top: 2px;
+            }
+
+            .toggle-switch {
+                position: relative;
+                width: 34px;
+                height: 20px;
+                background-color: var(--ytsift-text-disabled);
+                border-radius: 10px;
+                cursor: pointer;
+                transition: background-color 0.2s;
+                flex-shrink: 0;
+            }
+            .toggle-switch::after {
+                content: '';
+                position: absolute;
+                top: 2px;
+                left: 2px;
+                width: 16px;
+                height: 16px;
+                background-color: white;
+                border-radius: 50%;
+                transition: transform 0.2s;
+            }
+            .toggle-switch.active {
+                background-color: var(--ytsift-accent, #3ea6ff);
+            }
+            .toggle-switch.active::after {
+                transform: translateX(14px);
             }
         `);
 	},
@@ -529,7 +687,7 @@ class WatchedFilter extends BaseFilter {
 	constructor() {
 		super();
 		this.type = "all"; // "all" | "watched" | "unwatched"
-		this.percent = 10; // threshold percentage (default 10%)
+		this.percent = Settings.defaultWatched; // threshold percentage from settings
 	}
 
 	setCriteria(type, percent) {
@@ -540,7 +698,7 @@ class WatchedFilter extends BaseFilter {
 
 	reset() {
 		this.type = "all";
-		this.percent = 10;
+		this.percent = Settings.defaultWatched;
 		this.active = false;
 	}
 
@@ -1112,10 +1270,12 @@ const PopoverManager = {
 	viewsPopover: null,
 	watchedPopover: null,
 	agePopover: null,
+	settingsPopover: null,
 	lastDurationClosedTime: 0,
 	lastViewsClosedTime: 0,
 	lastWatchedClosedTime: 0,
 	lastAgeClosedTime: 0,
+	lastSettingsClosedTime: 0,
 
 	init() {
 		if (this.durationPopover) return;
@@ -1184,15 +1344,33 @@ const PopoverManager = {
 			}
 		});
 
+		this.settingsPopover = document.createElement("div");
+		this.settingsPopover.id = "ytsift-settings-popover";
+		this.settingsPopover.className = "ytsift-popover right-align";
+		this.settingsPopover.setAttribute("popover", "auto");
+		this.settingsPopover.addEventListener("beforetoggle", (e) => {
+			if (e.newState === "open") {
+				const trigger = document.getElementById("ytsift-settings-btn");
+				if (trigger) {
+					this.position(this.settingsPopover, trigger);
+				}
+			}
+			if (e.newState === "closed") {
+				this.lastSettingsClosedTime = Date.now();
+			}
+		});
+
 		document.body.appendChild(this.durationPopover);
 		document.body.appendChild(this.viewsPopover);
 		document.body.appendChild(this.watchedPopover);
 		document.body.appendChild(this.agePopover);
+		document.body.appendChild(this.settingsPopover);
 
 		this.buildDurationContent();
 		this.buildViewsContent();
 		this.buildWatchedContent();
 		this.buildAgeContent();
+		this.buildSettingsContent();
 	},
 
 	position(popover, target) {
@@ -1202,56 +1380,40 @@ const PopoverManager = {
 	},
 
 	buildDurationContent() {
-		const container = document.createElement("div");
-		container.className = "ytsift-popover-duration-container";
-
 		const presetsRow = document.createElement("div");
-		presetsRow.className = "ytsift-popover-presets-row";
+		presetsRow.className = "segmented-control";
 
 		const btnShort = document.createElement("button");
 		btnShort.id = "ytsift-popover-preset-short";
-		btnShort.className = "ytsift-popover-preset-btn";
-		btnShort.textContent = "Short (< 4m)";
+		btnShort.className = "segmented-btn";
+		btnShort.textContent = "< 4m";
 
 		const btnMedium = document.createElement("button");
 		btnMedium.id = "ytsift-popover-preset-medium";
-		btnMedium.className = "ytsift-popover-preset-btn";
-		btnMedium.textContent = "Medium (4-20m)";
+		btnMedium.className = "segmented-btn";
+		btnMedium.textContent = "4-20m";
 
 		const btnLong = document.createElement("button");
 		btnLong.id = "ytsift-popover-preset-long";
-		btnLong.className = "ytsift-popover-preset-btn";
-		btnLong.textContent = "Long (> 20m)";
+		btnLong.className = "segmented-btn";
+		btnLong.textContent = "> 20m";
 
 		presetsRow.appendChild(btnShort);
 		presetsRow.appendChild(btnMedium);
 		presetsRow.appendChild(btnLong);
 
-		// Sliders
-		const slidersContainer = document.createElement("div");
-		slidersContainer.className = "ytsift-popover-slider-container";
-		slidersContainer.style.borderTop = "1px solid var(--ytsift-outline)";
-		slidersContainer.style.paddingTop = "0.62em";
-		slidersContainer.style.marginTop = "0.15em";
-		slidersContainer.style.display = "flex";
-		slidersContainer.style.flexDirection = "column";
-		slidersContainer.style.gap = "0.62em";
-
 		// Min Duration Slider
 		const minContainer = document.createElement("div");
-		minContainer.style.display = "flex";
-		minContainer.style.flexDirection = "column";
-		minContainer.style.gap = "0.23em";
+		minContainer.className = "slider-row";
 
 		const minHeader = document.createElement("div");
-		minHeader.className = "ytsift-slider-header";
+		minHeader.className = "slider-header";
 		const minLabel = document.createElement("span");
 		minLabel.textContent = "Min Duration";
-		const minValSpan = document.createElement("span");
-		minValSpan.id = "ytsift-popover-duration-min-val";
-		minValSpan.textContent = "0m";
+		const { wrapper: minValWrapper, input: minValInput } =
+			this.createNumericInput("ytsift-popover-duration-min-val", 0, 0, 60, 1);
 		minHeader.appendChild(minLabel);
-		minHeader.appendChild(minValSpan);
+		minHeader.appendChild(minValWrapper);
 
 		const minSlider = document.createElement("input");
 		minSlider.id = "ytsift-popover-duration-min-slider";
@@ -1267,19 +1429,22 @@ const PopoverManager = {
 
 		// Max Duration Slider
 		const maxContainer = document.createElement("div");
-		maxContainer.style.display = "flex";
-		maxContainer.style.flexDirection = "column";
-		maxContainer.style.gap = "0.23em";
+		maxContainer.className = "slider-row";
 
 		const maxHeader = document.createElement("div");
-		maxHeader.className = "ytsift-slider-header";
+		maxHeader.className = "slider-header";
 		const maxLabel = document.createElement("span");
 		maxLabel.textContent = "Max Duration";
-		const maxValSpan = document.createElement("span");
-		maxValSpan.id = "ytsift-popover-duration-max-val";
-		maxValSpan.textContent = "Max";
+		const { wrapper: maxValWrapper, input: maxValInput } =
+			this.createNumericInput(
+				"ytsift-popover-duration-max-val",
+				120,
+				0,
+				120,
+				1,
+			);
 		maxHeader.appendChild(maxLabel);
-		maxHeader.appendChild(maxValSpan);
+		maxHeader.appendChild(maxValWrapper);
 
 		const maxSlider = document.createElement("input");
 		maxSlider.id = "ytsift-popover-duration-max-slider";
@@ -1293,12 +1458,46 @@ const PopoverManager = {
 		maxContainer.appendChild(maxHeader);
 		maxContainer.appendChild(maxSlider);
 
-		slidersContainer.appendChild(minContainer);
-		slidersContainer.appendChild(maxContainer);
+		this.durationPopover.appendChild(presetsRow);
+		this.durationPopover.appendChild(minContainer);
+		this.durationPopover.appendChild(maxContainer);
 
-		container.appendChild(presetsRow);
-		container.appendChild(slidersContainer);
-		this.durationPopover.appendChild(container);
+		// Footer (Clear Filter and Advanced Toggle)
+		const footer = document.createElement("div");
+		footer.className = "popover-footer";
+
+		const toggleModeBtn = document.createElement("button");
+		toggleModeBtn.className = "toggle-mode-btn";
+
+		const clearBtn = document.createElement("button");
+		clearBtn.className = "clear-filter-btn";
+		clearBtn.textContent = "Clear Filter";
+
+		footer.appendChild(toggleModeBtn);
+		footer.appendChild(clearBtn);
+		this.durationPopover.appendChild(footer);
+
+		const applyMode = () => {
+			if (Settings.durationAdvancedMode) {
+				presetsRow.style.display = "none";
+				minContainer.style.display = "flex";
+				maxContainer.style.display = "flex";
+				toggleModeBtn.textContent = "Presets";
+				return;
+			}
+			presetsRow.style.display = "flex";
+			minContainer.style.display = "none";
+			maxContainer.style.display = "none";
+			toggleModeBtn.textContent = "Advanced";
+		};
+
+		toggleModeBtn.addEventListener("click", () => {
+			Settings.durationAdvancedMode = !Settings.durationAdvancedMode;
+			Settings.save();
+			applyMode();
+		});
+
+		applyMode();
 
 		const updatePresetActiveClasses = (activePreset) => {
 			btnShort.classList.toggle("active", activePreset === "short");
@@ -1310,16 +1509,19 @@ const PopoverManager = {
 			const min = State.filters.duration.min;
 			const max = State.filters.duration.max;
 
-			minSlider.value = min;
-			minValSpan.textContent = `${min}m`;
+			minSlider.value = min.toString();
+			minValInput.value = min.toString();
+			this.updateTrack(minSlider);
 
 			if (max === Number.POSITIVE_INFINITY) {
 				maxSlider.value = "120";
-				maxValSpan.textContent = "Max";
+				maxValInput.value = "120";
+				this.updateTrack(maxSlider);
 				return;
 			}
-			maxSlider.value = max;
-			maxValSpan.textContent = `${max}m`;
+			maxSlider.value = max.toString();
+			maxValInput.value = max.toString();
+			this.updateTrack(maxSlider);
 		};
 
 		const handlePresetClick = (preset) => {
@@ -1352,6 +1554,13 @@ const PopoverManager = {
 			updatePresetActiveClasses(State.filters.duration.preset);
 			UIBuilder.updateDurationChipText();
 			FilterEngine.apply();
+
+			// Auto-dismiss
+			try {
+				this.durationPopover.hidePopover();
+			} catch {
+				this.durationPopover.style.display = "none";
+			}
 		};
 
 		btnShort.addEventListener("click", () => handlePresetClick("short"));
@@ -1364,7 +1573,7 @@ const PopoverManager = {
 
 			if (max !== 120 && min > max) {
 				min = max;
-				minSlider.value = min;
+				minSlider.value = min.toString();
 			}
 
 			const limitMax = max === 120 ? Number.POSITIVE_INFINITY : max;
@@ -1389,6 +1598,60 @@ const PopoverManager = {
 
 		minSlider.addEventListener("input", handleSliderChange);
 		maxSlider.addEventListener("input", handleSliderChange);
+
+		// Bidirectional sync for min number input
+		minValInput.addEventListener("input", () => {
+			let val = Number.parseInt(minValInput.value, 10);
+			if (Number.isNaN(val)) return;
+			if (val < 0) val = 0;
+			if (val > 60) val = 60;
+
+			const maxVal = Number.parseInt(maxSlider.value, 10);
+			if (maxVal !== 120 && val > maxVal) {
+				val = maxVal;
+				minValInput.value = val.toString();
+			}
+
+			minSlider.value = val.toString();
+			this.updateTrack(minSlider);
+
+			const limitMax = maxVal === 120 ? Number.POSITIVE_INFINITY : maxVal;
+			State.filters.duration.setRange(val, limitMax, "custom");
+			updatePresetActiveClasses(State.filters.duration.preset);
+			UIBuilder.updateDurationChipText();
+			FilterEngine.apply();
+		});
+
+		// Bidirectional sync for max number input
+		maxValInput.addEventListener("input", () => {
+			let val = Number.parseInt(maxValInput.value, 10);
+			if (Number.isNaN(val)) return;
+			if (val < 0) val = 0;
+			if (val > 120) val = 120;
+
+			const minVal = Number.parseInt(minSlider.value, 10);
+			if (val < minVal) {
+				val = minVal;
+				maxValInput.value = val.toString();
+			}
+
+			maxSlider.value = val.toString();
+			this.updateTrack(maxSlider);
+
+			const limitMax = val === 120 ? Number.POSITIVE_INFINITY : val;
+			State.filters.duration.setRange(minVal, limitMax, "custom");
+			updatePresetActiveClasses(State.filters.duration.preset);
+			UIBuilder.updateDurationChipText();
+			FilterEngine.apply();
+		});
+
+		clearBtn.addEventListener("click", () => {
+			State.filters.duration.reset();
+			updateUI();
+			updatePresetActiveClasses(State.filters.duration.preset);
+			UIBuilder.updateDurationChipText();
+			FilterEngine.apply();
+		});
 	},
 
 	buildViewsContent() {
@@ -1412,33 +1675,17 @@ const PopoverManager = {
 			Number.POSITIVE_INFINITY,
 		];
 
-		const formatViewsValue = (val) => {
-			if (val === 0) return "0";
-			if (val === Number.POSITIVE_INFINITY) return "Max";
-			if (val >= 1000000)
-				return `${(val / 1000000).toFixed(1).replace(".0", "")}M`;
-			if (val >= 1000) return `${(val / 1000).toFixed(1).replace(".0", "")}k`;
-			return val.toString();
-		};
-
-		const container = document.createElement("div");
-		container.className = "ytsift-popover-duration-container";
-		container.style.width = "12.31em";
-
 		const minContainer = document.createElement("div");
-		minContainer.style.display = "flex";
-		minContainer.style.flexDirection = "column";
-		minContainer.style.gap = "0.23em";
+		minContainer.className = "slider-row";
 
 		const minHeader = document.createElement("div");
-		minHeader.className = "ytsift-slider-header";
+		minHeader.className = "slider-header";
 		const minLabel = document.createElement("span");
 		minLabel.textContent = "Min Views";
-		const minValSpan = document.createElement("span");
-		minValSpan.id = "ytsift-popover-views-min-val";
-		minValSpan.textContent = "0";
+		const { wrapper: minValWrapper, input: minValInput } =
+			this.createNumericInput("ytsift-popover-views-min-val", 0, 0, null, 1000);
 		minHeader.appendChild(minLabel);
-		minHeader.appendChild(minValSpan);
+		minHeader.appendChild(minValWrapper);
 
 		const minSlider = document.createElement("input");
 		minSlider.id = "ytsift-popover-views-min-slider";
@@ -1453,19 +1700,22 @@ const PopoverManager = {
 		minContainer.appendChild(minSlider);
 
 		const maxContainer = document.createElement("div");
-		maxContainer.style.display = "flex";
-		maxContainer.style.flexDirection = "column";
-		maxContainer.style.gap = "0.23em";
+		maxContainer.className = "slider-row";
 
 		const maxHeader = document.createElement("div");
-		maxHeader.className = "ytsift-slider-header";
+		maxHeader.className = "slider-header";
 		const maxLabel = document.createElement("span");
 		maxLabel.textContent = "Max Views";
-		const maxValSpan = document.createElement("span");
-		maxValSpan.id = "ytsift-popover-views-max-val";
-		maxValSpan.textContent = "Max";
+		const { wrapper: maxValWrapper, input: maxValInput } =
+			this.createNumericInput(
+				"ytsift-popover-views-max-val",
+				"",
+				0,
+				null,
+				1000,
+			);
 		maxHeader.appendChild(maxLabel);
-		maxHeader.appendChild(maxValSpan);
+		maxHeader.appendChild(maxValWrapper);
 
 		const maxSlider = document.createElement("input");
 		maxSlider.id = "ytsift-popover-views-max-slider";
@@ -1479,9 +1729,31 @@ const PopoverManager = {
 		maxContainer.appendChild(maxHeader);
 		maxContainer.appendChild(maxSlider);
 
-		container.appendChild(minContainer);
-		container.appendChild(maxContainer);
-		this.viewsPopover.appendChild(container);
+		this.viewsPopover.appendChild(minContainer);
+		this.viewsPopover.appendChild(maxContainer);
+
+		const updateUI = () => {
+			const minVal = State.filters.views.min;
+			const maxVal = State.filters.views.max;
+
+			const minIndex =
+				VIEW_STEPS.indexOf(minVal) !== -1 ? VIEW_STEPS.indexOf(minVal) : 0;
+			const maxIndex =
+				VIEW_STEPS.indexOf(maxVal) !== -1
+					? VIEW_STEPS.indexOf(maxVal)
+					: VIEW_STEPS.length - 1;
+
+			minSlider.value = minIndex.toString();
+			maxSlider.value = maxIndex.toString();
+
+			minValInput.value =
+				minVal === Number.POSITIVE_INFINITY ? "" : minVal.toString();
+			maxValInput.value =
+				maxVal === Number.POSITIVE_INFINITY ? "" : maxVal.toString();
+
+			this.updateTrack(minSlider);
+			this.updateTrack(maxSlider);
+		};
 
 		const handleSliderChange = () => {
 			let minIndex = Number.parseInt(minSlider.value, 10);
@@ -1495,8 +1767,13 @@ const PopoverManager = {
 			const minVal = VIEW_STEPS[minIndex];
 			const maxVal = VIEW_STEPS[maxIndex];
 
-			minValSpan.textContent = formatViewsValue(minVal);
-			maxValSpan.textContent = formatViewsValue(maxVal);
+			minValInput.value =
+				minVal === Number.POSITIVE_INFINITY ? "" : minVal.toString();
+			maxValInput.value =
+				maxVal === Number.POSITIVE_INFINITY ? "" : maxVal.toString();
+
+			this.updateTrack(minSlider);
+			this.updateTrack(maxSlider);
 
 			State.filters.views.setRange(minVal, maxVal);
 			UIBuilder.updateViewsChipText();
@@ -1505,28 +1782,74 @@ const PopoverManager = {
 
 		minSlider.addEventListener("input", handleSliderChange);
 		maxSlider.addEventListener("input", handleSliderChange);
+
+		// Bidirectional sync for min views input
+		minValInput.addEventListener("input", () => {
+			let val = Number.parseInt(minValInput.value, 10);
+			if (Number.isNaN(val) || val < 0) {
+				val = 0;
+			}
+			const minIndex = this.findClosestIndex(val, VIEW_STEPS);
+			minSlider.value = minIndex.toString();
+			this.updateTrack(minSlider);
+
+			const maxVal = State.filters.views.max;
+			State.filters.views.setRange(val, maxVal);
+			UIBuilder.updateViewsChipText();
+			FilterEngine.apply();
+		});
+
+		// Bidirectional sync for max views input
+		maxValInput.addEventListener("input", () => {
+			let val = Number.parseInt(maxValInput.value, 10);
+			if (Number.isNaN(val) || val < 0) {
+				val = Number.POSITIVE_INFINITY;
+			}
+			const maxIndex = this.findClosestIndex(val, VIEW_STEPS);
+			maxSlider.value = maxIndex.toString();
+			this.updateTrack(maxSlider);
+
+			const minVal = State.filters.views.min;
+			State.filters.views.setRange(minVal, val);
+			UIBuilder.updateViewsChipText();
+			FilterEngine.apply();
+		});
+
+		// Add Clear Filter Button
+		const footer = document.createElement("div");
+		footer.className = "popover-footer";
+
+		const clearBtn = document.createElement("button");
+		clearBtn.className = "clear-filter-btn";
+		clearBtn.textContent = "Clear Filter";
+		clearBtn.addEventListener("click", () => {
+			State.filters.views.reset();
+			updateUI();
+			UIBuilder.updateViewsChipText();
+			FilterEngine.apply();
+		});
+		footer.appendChild(document.createElement("div"));
+		footer.appendChild(clearBtn);
+		this.viewsPopover.appendChild(footer);
 	},
 
 	buildWatchedContent() {
-		const container = document.createElement("div");
-		container.className = "ytsift-popover-duration-container";
-
 		const presetsRow = document.createElement("div");
-		presetsRow.className = "ytsift-popover-presets-row";
+		presetsRow.className = "segmented-control";
 
 		const btnAll = document.createElement("button");
 		btnAll.id = "ytsift-popover-watched-all";
-		btnAll.className = "ytsift-popover-preset-btn active";
+		btnAll.className = "segmented-btn active";
 		btnAll.textContent = "All";
 
 		const btnUnwatched = document.createElement("button");
 		btnUnwatched.id = "ytsift-popover-watched-unwatched";
-		btnUnwatched.className = "ytsift-popover-preset-btn";
+		btnUnwatched.className = "segmented-btn";
 		btnUnwatched.textContent = "Unwatched";
 
 		const btnWatched = document.createElement("button");
 		btnWatched.id = "ytsift-popover-watched-watched";
-		btnWatched.className = "ytsift-popover-preset-btn";
+		btnWatched.className = "segmented-btn";
 		btnWatched.textContent = "Watched";
 
 		presetsRow.appendChild(btnAll);
@@ -1534,20 +1857,19 @@ const PopoverManager = {
 		presetsRow.appendChild(btnWatched);
 
 		const sliderContainer = document.createElement("div");
-		sliderContainer.className = "ytsift-popover-slider-container";
+		sliderContainer.className = "slider-row";
 
 		const sliderHeader = document.createElement("div");
-		sliderHeader.className = "ytsift-slider-header";
+		sliderHeader.className = "slider-header";
 
 		const sliderLabel = document.createElement("span");
 		sliderLabel.textContent = "Threshold";
 
-		const sliderValue = document.createElement("span");
-		sliderValue.id = "ytsift-popover-watched-value";
-		sliderValue.textContent = "10%";
+		const { wrapper: watchedValWrapper, input: watchedValInput } =
+			this.createNumericInput("ytsift-popover-watched-value", 10, 0, 100, 5);
 
 		sliderHeader.appendChild(sliderLabel);
-		sliderHeader.appendChild(sliderValue);
+		sliderHeader.appendChild(watchedValWrapper);
 
 		const slider = document.createElement("input");
 		slider.id = "ytsift-popover-watched-slider";
@@ -1561,9 +1883,8 @@ const PopoverManager = {
 		sliderContainer.appendChild(sliderHeader);
 		sliderContainer.appendChild(slider);
 
-		container.appendChild(presetsRow);
-		container.appendChild(sliderContainer);
-		this.watchedPopover.appendChild(container);
+		this.watchedPopover.appendChild(presetsRow);
+		this.watchedPopover.appendChild(sliderContainer);
 
 		const updateUI = () => {
 			const currentType = State.filters.watched.type;
@@ -1573,16 +1894,19 @@ const PopoverManager = {
 			btnUnwatched.classList.toggle("active", currentType === "unwatched");
 			btnWatched.classList.toggle("active", currentType === "watched");
 
-			slider.value = currentPercent;
-			sliderValue.textContent = `${currentPercent}%`;
+			slider.value = currentPercent.toString();
+			watchedValInput.value = currentPercent.toString();
+			this.updateTrack(slider);
 
 			if (currentType === "all") {
 				sliderContainer.style.opacity = "0.5";
 				slider.disabled = true;
+				watchedValInput.disabled = true;
 				return;
 			}
 			sliderContainer.style.opacity = "1";
 			slider.disabled = false;
+			watchedValInput.disabled = false;
 		};
 
 		const handleTypeClick = (type) => {
@@ -1593,6 +1917,15 @@ const PopoverManager = {
 			updateUI();
 			UIBuilder.updateWatchedChipText();
 			FilterEngine.apply();
+
+			// Auto-dismiss for unwatched/watched presets
+			if (type !== "all") {
+				try {
+					this.watchedPopover.hidePopover();
+				} catch {
+					this.watchedPopover.style.display = "none";
+				}
+			}
 		};
 
 		btnAll.addEventListener("click", () => handleTypeClick("all"));
@@ -1601,13 +1934,50 @@ const PopoverManager = {
 
 		slider.addEventListener("input", () => {
 			const percent = Number.parseInt(slider.value, 10);
-			sliderValue.textContent = `${percent}%`;
+			watchedValInput.value = percent.toString();
+			this.updateTrack(slider);
 			if (State.filters.watched.type !== "all") {
 				State.filters.watched.setCriteria(State.filters.watched.type, percent);
 				UIBuilder.updateWatchedChipText();
 				FilterEngine.apply();
 			}
 		});
+
+		// Bidirectional sync for watched input value
+		watchedValInput.addEventListener("input", () => {
+			let percent = Number.parseInt(watchedValInput.value, 10);
+			if (Number.isNaN(percent) || percent < 0) {
+				percent = 0;
+			}
+			if (percent > 100) {
+				percent = 100;
+			}
+
+			slider.value = percent.toString();
+			this.updateTrack(slider);
+			if (State.filters.watched.type !== "all") {
+				State.filters.watched.setCriteria(State.filters.watched.type, percent);
+				UIBuilder.updateWatchedChipText();
+				FilterEngine.apply();
+			}
+		});
+
+		// Add Clear Filter Button
+		const footer = document.createElement("div");
+		footer.className = "popover-footer";
+
+		const clearBtn = document.createElement("button");
+		clearBtn.className = "clear-filter-btn";
+		clearBtn.textContent = "Clear Filter";
+		clearBtn.addEventListener("click", () => {
+			State.filters.watched.reset();
+			updateUI();
+			UIBuilder.updateWatchedChipText();
+			FilterEngine.apply();
+		});
+		footer.appendChild(document.createElement("div"));
+		footer.appendChild(clearBtn);
+		this.watchedPopover.appendChild(footer);
 	},
 
 	buildAgeContent() {
@@ -1628,42 +1998,17 @@ const PopoverManager = {
 			Number.POSITIVE_INFINITY,
 		];
 
-		const formatAgeValue = (days) => {
-			if (days === 0) return "0 days";
-			if (days === Number.POSITIVE_INFINITY) return "Max";
-			if (days >= 365) {
-				const yrs = days / 365;
-				return `${yrs.toFixed(1).replace(".0", "")}y`;
-			}
-			if (days >= 30) {
-				const mos = days / 30;
-				return `${mos.toFixed(1).replace(".0", "")}mo`;
-			}
-			if (days >= 7) {
-				const wks = days / 7;
-				return `${wks.toFixed(1).replace(".0", "")}w`;
-			}
-			return `${days}d`;
-		};
-
-		const container = document.createElement("div");
-		container.className = "ytsift-popover-duration-container";
-		container.style.width = "12.31em";
-
 		const minContainer = document.createElement("div");
-		minContainer.style.display = "flex";
-		minContainer.style.flexDirection = "column";
-		minContainer.style.gap = "0.23em";
+		minContainer.className = "slider-row";
 
 		const minHeader = document.createElement("div");
-		minHeader.className = "ytsift-slider-header";
+		minHeader.className = "slider-header";
 		const minLabel = document.createElement("span");
 		minLabel.textContent = "Min Age";
-		const minValSpan = document.createElement("span");
-		minValSpan.id = "ytsift-popover-age-min-val";
-		minValSpan.textContent = "0 days";
+		const { wrapper: minValWrapper, input: minValInput } =
+			this.createNumericInput("ytsift-popover-age-min-val", 0, 0, null, 1);
 		minHeader.appendChild(minLabel);
-		minHeader.appendChild(minValSpan);
+		minHeader.appendChild(minValWrapper);
 
 		const minSlider = document.createElement("input");
 		minSlider.id = "ytsift-popover-age-min-slider";
@@ -1678,19 +2023,16 @@ const PopoverManager = {
 		minContainer.appendChild(minSlider);
 
 		const maxContainer = document.createElement("div");
-		maxContainer.style.display = "flex";
-		maxContainer.style.flexDirection = "column";
-		maxContainer.style.gap = "0.23em";
+		maxContainer.className = "slider-row";
 
 		const maxHeader = document.createElement("div");
-		maxHeader.className = "ytsift-slider-header";
+		maxHeader.className = "slider-header";
 		const maxLabel = document.createElement("span");
 		maxLabel.textContent = "Max Age";
-		const maxValSpan = document.createElement("span");
-		maxValSpan.id = "ytsift-popover-age-max-val";
-		maxValSpan.textContent = "Max";
+		const { wrapper: maxValWrapper, input: maxValInput } =
+			this.createNumericInput("ytsift-popover-age-max-val", "", 0, null, 1);
 		maxHeader.appendChild(maxLabel);
-		maxHeader.appendChild(maxValSpan);
+		maxHeader.appendChild(maxValWrapper);
 
 		const maxSlider = document.createElement("input");
 		maxSlider.id = "ytsift-popover-age-max-slider";
@@ -1704,9 +2046,31 @@ const PopoverManager = {
 		maxContainer.appendChild(maxHeader);
 		maxContainer.appendChild(maxSlider);
 
-		container.appendChild(minContainer);
-		container.appendChild(maxContainer);
-		this.agePopover.appendChild(container);
+		this.agePopover.appendChild(minContainer);
+		this.agePopover.appendChild(maxContainer);
+
+		const updateUI = () => {
+			const minVal = State.filters.age.min;
+			const maxVal = State.filters.age.max;
+
+			const minIndex =
+				AGE_STEPS.indexOf(minVal) !== -1 ? AGE_STEPS.indexOf(minVal) : 0;
+			const maxIndex =
+				AGE_STEPS.indexOf(maxVal) !== -1
+					? AGE_STEPS.indexOf(maxVal)
+					: AGE_STEPS.length - 1;
+
+			minSlider.value = minIndex.toString();
+			maxSlider.value = maxIndex.toString();
+
+			minValInput.value =
+				minVal === Number.POSITIVE_INFINITY ? "" : minVal.toString();
+			maxValInput.value =
+				maxVal === Number.POSITIVE_INFINITY ? "" : maxVal.toString();
+
+			this.updateTrack(minSlider);
+			this.updateTrack(maxSlider);
+		};
 
 		const handleSliderChange = () => {
 			let minIndex = Number.parseInt(minSlider.value, 10);
@@ -1720,8 +2084,13 @@ const PopoverManager = {
 			const minVal = AGE_STEPS[minIndex];
 			const maxVal = AGE_STEPS[maxIndex];
 
-			minValSpan.textContent = formatAgeValue(minVal);
-			maxValSpan.textContent = formatAgeValue(maxVal);
+			minValInput.value =
+				minVal === Number.POSITIVE_INFINITY ? "" : minVal.toString();
+			maxValInput.value =
+				maxVal === Number.POSITIVE_INFINITY ? "" : maxVal.toString();
+
+			this.updateTrack(minSlider);
+			this.updateTrack(maxSlider);
 
 			State.filters.age.setRange(minVal, maxVal);
 			UIBuilder.updateAgeChipText();
@@ -1730,6 +2099,80 @@ const PopoverManager = {
 
 		minSlider.addEventListener("input", handleSliderChange);
 		maxSlider.addEventListener("input", handleSliderChange);
+
+		// Bidirectional sync for min age input
+		minValInput.addEventListener("input", () => {
+			let val = Number.parseInt(minValInput.value, 10);
+			if (Number.isNaN(val) || val < 0) {
+				val = 0;
+			}
+			const minIndex = this.findClosestIndex(val, AGE_STEPS);
+			minSlider.value = minIndex.toString();
+			this.updateTrack(minSlider);
+
+			const maxVal = State.filters.age.max;
+			State.filters.age.setRange(val, maxVal);
+			UIBuilder.updateAgeChipText();
+			FilterEngine.apply();
+		});
+
+		// Bidirectional sync for max age input
+		maxValInput.addEventListener("input", () => {
+			let val = Number.parseInt(maxValInput.value, 10);
+			if (Number.isNaN(val) || val < 0) {
+				val = Number.POSITIVE_INFINITY;
+			}
+			const maxIndex = this.findClosestIndex(val, AGE_STEPS);
+			maxSlider.value = maxIndex.toString();
+			this.updateTrack(maxSlider);
+
+			const minVal = State.filters.age.min;
+			State.filters.age.setRange(minVal, val);
+			UIBuilder.updateAgeChipText();
+			FilterEngine.apply();
+		});
+
+		// Add Clear Filter Button
+		const footer = document.createElement("div");
+		footer.className = "popover-footer";
+
+		const clearBtn = document.createElement("button");
+		clearBtn.className = "clear-filter-btn";
+		clearBtn.textContent = "Clear Filter";
+		clearBtn.addEventListener("click", () => {
+			State.filters.age.reset();
+			updateUI();
+			UIBuilder.updateAgeChipText();
+			FilterEngine.apply();
+		});
+		footer.appendChild(document.createElement("div"));
+		footer.appendChild(clearBtn);
+		this.agePopover.appendChild(footer);
+	},
+
+	findClosestIndex(val, steps) {
+		let closestIdx = 0;
+		let minDiff = Number.POSITIVE_INFINITY;
+		for (let i = 0; i < steps.length; i++) {
+			const stepVal = steps[i];
+			const diff = Math.abs(
+				(stepVal === Number.POSITIVE_INFINITY ? 999999999 : stepVal) - val,
+			);
+			if (diff < minDiff) {
+				minDiff = diff;
+				closestIdx = i;
+			}
+		}
+		return closestIdx;
+	},
+
+	updateTrack(slider) {
+		if (!slider) return;
+		const min = Number.parseFloat(slider.min) || 0;
+		const max = Number.parseFloat(slider.max) || 100;
+		const val = Number.parseFloat(slider.value) || 0;
+		const pct = ((val - min) / (max - min)) * 100;
+		slider.style.setProperty("--slider-progress", `${pct}%`);
 	},
 
 	updateDurationInputs(min, max) {
@@ -1739,10 +2182,10 @@ const PopoverManager = {
 		const maxSlider = this.durationPopover.querySelector(
 			"#ytsift-popover-duration-max-slider",
 		);
-		const minValSpan = this.durationPopover.querySelector(
+		const minValInput = this.durationPopover.querySelector(
 			"#ytsift-popover-duration-min-val",
 		);
-		const maxValSpan = this.durationPopover.querySelector(
+		const maxValInput = this.durationPopover.querySelector(
 			"#ytsift-popover-duration-max-val",
 		);
 
@@ -1762,15 +2205,21 @@ const PopoverManager = {
 			btnMedium.classList.toggle("active", activePreset === "medium");
 		if (btnLong) btnLong.classList.toggle("active", activePreset === "long");
 
-		if (minSlider) minSlider.value = min === "" ? 0 : min;
-		if (minValSpan) minValSpan.textContent = `${min === "" ? 0 : min}m`;
+		if (minSlider) {
+			minSlider.value = min === "" ? "0" : min.toString();
+			this.updateTrack(minSlider);
+		}
+		if (minValInput) minValInput.value = min === "" ? "0" : min.toString();
 
-		if (maxSlider)
+		if (maxSlider) {
 			maxSlider.value =
-				max === Number.POSITIVE_INFINITY || max === "" ? 120 : max;
-		if (maxValSpan)
-			maxValSpan.textContent =
-				max === Number.POSITIVE_INFINITY || max === "" ? "Max" : `${max}m`;
+				max === Number.POSITIVE_INFINITY || max === "" ? "120" : max.toString();
+			this.updateTrack(maxSlider);
+		}
+		if (maxValInput) {
+			maxValInput.value =
+				max === Number.POSITIVE_INFINITY || max === "" ? "120" : max.toString();
+		}
 	},
 
 	updateViewsInputs(min, max) {
@@ -1794,25 +2243,16 @@ const PopoverManager = {
 			Number.POSITIVE_INFINITY,
 		];
 
-		const formatViewsValue = (val) => {
-			if (val === 0) return "0";
-			if (val === Number.POSITIVE_INFINITY) return "Max";
-			if (val >= 1000000)
-				return `${(val / 1000000).toFixed(1).replace(".0", "")}M`;
-			if (val >= 1000) return `${(val / 1000).toFixed(1).replace(".0", "")}k`;
-			return val.toString();
-		};
-
 		const minSlider = this.viewsPopover.querySelector(
 			"#ytsift-popover-views-min-slider",
 		);
 		const maxSlider = this.viewsPopover.querySelector(
 			"#ytsift-popover-views-max-slider",
 		);
-		const minValSpan = this.viewsPopover.querySelector(
+		const minValInput = this.viewsPopover.querySelector(
 			"#ytsift-popover-views-min-val",
 		);
-		const maxValSpan = this.viewsPopover.querySelector(
+		const maxValInput = this.viewsPopover.querySelector(
 			"#ytsift-popover-views-max-val",
 		);
 
@@ -1825,18 +2265,30 @@ const PopoverManager = {
 		let maxIndex = VIEW_STEPS.indexOf(actualMax);
 		if (maxIndex === -1) maxIndex = VIEW_STEPS.length - 1;
 
-		if (minSlider) minSlider.value = minIndex.toString();
-		if (minValSpan) minValSpan.textContent = formatViewsValue(actualMin);
+		if (minSlider) {
+			minSlider.value = minIndex.toString();
+			this.updateTrack(minSlider);
+		}
+		if (minValInput) {
+			minValInput.value =
+				actualMin === Number.POSITIVE_INFINITY ? "" : actualMin.toString();
+		}
 
-		if (maxSlider) maxSlider.value = maxIndex.toString();
-		if (maxValSpan) maxValSpan.textContent = formatViewsValue(actualMax);
+		if (maxSlider) {
+			maxSlider.value = maxIndex.toString();
+			this.updateTrack(maxSlider);
+		}
+		if (maxValInput) {
+			maxValInput.value =
+				actualMax === Number.POSITIVE_INFINITY ? "" : actualMax.toString();
+		}
 	},
 
 	updateWatchedInputs(type, percent) {
 		const slider = this.watchedPopover.querySelector(
 			"#ytsift-popover-watched-slider",
 		);
-		const sliderValue = this.watchedPopover.querySelector(
+		const watchedValInput = this.watchedPopover.querySelector(
 			"#ytsift-popover-watched-value",
 		);
 		const btnAll = this.watchedPopover.querySelector(
@@ -1848,12 +2300,13 @@ const PopoverManager = {
 		const btnWatched = this.watchedPopover.querySelector(
 			"#ytsift-popover-watched-watched",
 		);
-		const sliderContainer = this.watchedPopover.querySelector(
-			".ytsift-popover-slider-container",
-		);
+		const sliderContainer = this.watchedPopover.querySelector(".slider-row");
 
-		if (slider) slider.value = percent;
-		if (sliderValue) sliderValue.textContent = `${percent}%`;
+		if (slider) {
+			slider.value = percent.toString();
+			this.updateTrack(slider);
+		}
+		if (watchedValInput) watchedValInput.value = percent.toString();
 
 		if (btnAll) btnAll.classList.toggle("active", type === "all");
 		if (btnUnwatched)
@@ -1885,34 +2338,16 @@ const PopoverManager = {
 			Number.POSITIVE_INFINITY,
 		];
 
-		const formatAgeValue = (days) => {
-			if (days === 0) return "0 days";
-			if (days === Number.POSITIVE_INFINITY) return "Max";
-			if (days >= 365) {
-				const yrs = days / 365;
-				return `${yrs.toFixed(1).replace(".0", "")}y`;
-			}
-			if (days >= 30) {
-				const mos = days / 30;
-				return `${mos.toFixed(1).replace(".0", "")}mo`;
-			}
-			if (days >= 7) {
-				const wks = days / 7;
-				return `${wks.toFixed(1).replace(".0", "")}w`;
-			}
-			return `${days}d`;
-		};
-
 		const minSlider = this.agePopover.querySelector(
 			"#ytsift-popover-age-min-slider",
 		);
 		const maxSlider = this.agePopover.querySelector(
 			"#ytsift-popover-age-max-slider",
 		);
-		const minValSpan = this.agePopover.querySelector(
+		const minValInput = this.agePopover.querySelector(
 			"#ytsift-popover-age-min-val",
 		);
-		const maxValSpan = this.agePopover.querySelector(
+		const maxValInput = this.agePopover.querySelector(
 			"#ytsift-popover-age-max-val",
 		);
 
@@ -1925,11 +2360,23 @@ const PopoverManager = {
 		let maxIndex = AGE_STEPS.indexOf(actualMax);
 		if (maxIndex === -1) maxIndex = AGE_STEPS.length - 1;
 
-		if (minSlider) minSlider.value = minIndex.toString();
-		if (minValSpan) minValSpan.textContent = formatAgeValue(actualMin);
+		if (minSlider) {
+			minSlider.value = minIndex.toString();
+			this.updateTrack(minSlider);
+		}
+		if (minValInput) {
+			minValInput.value =
+				actualMin === Number.POSITIVE_INFINITY ? "" : actualMin.toString();
+		}
 
-		if (maxSlider) maxSlider.value = maxIndex.toString();
-		if (maxValSpan) maxValSpan.textContent = formatAgeValue(actualMax);
+		if (maxSlider) {
+			maxSlider.value = maxIndex.toString();
+			this.updateTrack(maxSlider);
+		}
+		if (maxValInput) {
+			maxValInput.value =
+				actualMax === Number.POSITIVE_INFINITY ? "" : actualMax.toString();
+		}
 	},
 
 	showDuration(target) {
@@ -1968,6 +2415,15 @@ const PopoverManager = {
 		}
 	},
 
+	showSettings(target) {
+		this.position(this.settingsPopover, target);
+		try {
+			this.settingsPopover.showPopover();
+		} catch {
+			this.settingsPopover.style.display = "block";
+		}
+	},
+
 	isDurationOpen() {
 		return (
 			this.durationPopover &&
@@ -2000,17 +2456,312 @@ const PopoverManager = {
 		);
 	},
 
+	isSettingsOpen() {
+		return (
+			this.settingsPopover &&
+			(this.settingsPopover.matches(":popover-open") ||
+				this.settingsPopover.style.display === "block")
+		);
+	},
+
+	createNumericInput(id, value, min, max, step) {
+		const wrapper = document.createElement("div");
+		wrapper.className = "num-outlined";
+
+		const btnDec = document.createElement("button");
+		btnDec.type = "button";
+		btnDec.className = "btn-dec";
+		btnDec.setAttribute("aria-label", "Decrease");
+		btnDec.textContent = "－";
+
+		const input = document.createElement("input");
+		input.type = "number";
+		input.id = id;
+		input.className = "number-input";
+		input.value = value.toString();
+		if (min !== undefined && min !== null) {
+			input.setAttribute("min", min.toString());
+		}
+		if (max !== undefined && max !== null) {
+			input.setAttribute("max", max.toString());
+		}
+		if (step !== undefined && step !== null) {
+			input.setAttribute("step", step.toString());
+		}
+
+		const btnInc = document.createElement("button");
+		btnInc.type = "button";
+		btnInc.className = "btn-inc";
+		btnInc.setAttribute("aria-label", "Increase");
+		btnInc.textContent = "＋";
+
+		wrapper.appendChild(btnDec);
+		wrapper.appendChild(input);
+		wrapper.appendChild(btnInc);
+
+		const updateValue = (amount) => {
+			const minValue = input.hasAttribute("min")
+				? Number.parseFloat(input.getAttribute("min") || "0")
+				: Number.NEGATIVE_INFINITY;
+			const maxValue = input.hasAttribute("max")
+				? Number.parseFloat(input.getAttribute("max") || "0")
+				: Number.POSITIVE_INFINITY;
+			const stepValue = input.hasAttribute("step")
+				? Number.parseFloat(input.getAttribute("step") || "1")
+				: 1;
+
+			const currentValue = Number.parseFloat(input.value) || 0;
+			let newValue = currentValue + amount * stepValue;
+
+			if (newValue < minValue) {
+				newValue = minValue;
+			}
+			if (newValue > maxValue) {
+				newValue = maxValue;
+			}
+
+			const decimals = (stepValue.toString().split(".")[1] || "").length;
+			input.value = newValue.toFixed(decimals);
+
+			input.dispatchEvent(new Event("input", { bubbles: true }));
+		};
+
+		btnDec.addEventListener("click", () => updateValue(-1));
+		btnInc.addEventListener("click", () => updateValue(1));
+
+		input.addEventListener("blur", () => {
+			const minValue = input.hasAttribute("min")
+				? Number.parseFloat(input.getAttribute("min") || "0")
+				: Number.NEGATIVE_INFINITY;
+			const maxValue = input.hasAttribute("max")
+				? Number.parseFloat(input.getAttribute("max") || "0")
+				: Number.POSITIVE_INFINITY;
+			let val = Number.parseFloat(input.value);
+
+			if (Number.isNaN(val)) {
+				val = minValue !== Number.NEGATIVE_INFINITY ? minValue : 0;
+			}
+			if (val < minValue) {
+				val = minValue;
+			}
+			if (val > maxValue) {
+				val = maxValue;
+			}
+
+			input.value = val.toString();
+			input.dispatchEvent(new Event("input", { bubbles: true }));
+		});
+
+		return { wrapper, input };
+	},
+
+	buildSettingsContent() {
+		const container = document.createElement("div");
+		container.className = "ytsift-popover-settings-container";
+
+		// 1. Queue Throttle Setting
+		const throttleRow = document.createElement("div");
+		throttleRow.className = "settings-item";
+
+		const throttleInfo = document.createElement("div");
+		const throttleLabel = document.createElement("div");
+		throttleLabel.className = "settings-label";
+		throttleLabel.textContent = "Queue Delay (ms)";
+		const throttleDesc = document.createElement("div");
+		throttleDesc.className = "settings-desc";
+		throttleDesc.textContent = "Delay between queue additions";
+		throttleInfo.appendChild(throttleLabel);
+		throttleInfo.appendChild(throttleDesc);
+
+		const { wrapper: throttleWrapper, input: throttleInput } =
+			this.createNumericInput(
+				"setting-throttle",
+				Settings.queueThrottle,
+				0,
+				null,
+				50,
+			);
+
+		throttleInput.addEventListener("input", () => {
+			let val = Number.parseInt(throttleInput.value, 10);
+			if (Number.isNaN(val) || val < 0) {
+				val = 0;
+			}
+			Settings.queueThrottle = val;
+			Settings.save();
+		});
+
+		throttleRow.appendChild(throttleInfo);
+		throttleRow.appendChild(throttleWrapper);
+		container.appendChild(throttleRow);
+
+		// 2. Scroll Request Delay Setting
+		const requestRow = document.createElement("div");
+		requestRow.className = "settings-item";
+
+		const requestInfo = document.createElement("div");
+		const requestLabel = document.createElement("div");
+		requestLabel.className = "settings-label";
+		requestLabel.textContent = "Scroll Request Delay (ms)";
+		const requestDesc = document.createElement("div");
+		requestDesc.className = "settings-desc";
+		requestDesc.textContent = "Delay between network fetch requests";
+		requestInfo.appendChild(requestLabel);
+		requestInfo.appendChild(requestDesc);
+
+		const { wrapper: requestWrapper, input: requestInput } =
+			this.createNumericInput(
+				"setting-request-throttle",
+				Settings.requestThrottle,
+				0,
+				null,
+				100,
+			);
+
+		requestInput.addEventListener("input", () => {
+			let val = Number.parseInt(requestInput.value, 10);
+			if (Number.isNaN(val) || val < 0) {
+				val = 0;
+			}
+			Settings.requestThrottle = val;
+			Settings.save();
+		});
+
+		requestRow.appendChild(requestInfo);
+		requestRow.appendChild(requestWrapper);
+		container.appendChild(requestRow);
+
+		// 3. Watched Threshold Setting
+		const watchedRow = document.createElement("div");
+		watchedRow.className = "settings-item";
+
+		const watchedInfo = document.createElement("div");
+		const watchedLabel = document.createElement("div");
+		watchedLabel.className = "settings-label";
+		watchedLabel.textContent = "Watched Threshold (%)";
+		const watchedDesc = document.createElement("div");
+		watchedDesc.className = "settings-desc";
+		watchedDesc.textContent = "Minimum watched percentage to hide/show";
+		watchedInfo.appendChild(watchedLabel);
+		watchedInfo.appendChild(watchedDesc);
+
+		const { wrapper: watchedWrapper, input: watchedInput } =
+			this.createNumericInput(
+				"setting-watched",
+				Settings.defaultWatched,
+				1,
+				100,
+				1,
+			);
+
+		watchedInput.addEventListener("input", () => {
+			let val = Number.parseInt(watchedInput.value, 10);
+			if (Number.isNaN(val) || val < 1) {
+				val = 1;
+			}
+			if (val > 100) {
+				val = 100;
+			}
+			Settings.defaultWatched = val;
+			Settings.save();
+		});
+
+		watchedRow.appendChild(watchedInfo);
+		watchedRow.appendChild(watchedWrapper);
+		container.appendChild(watchedRow);
+
+		// Helper to create toggle switches
+		const createToggleRow = (labelText, descText, key, onToggle) => {
+			const row = document.createElement("div");
+			row.className = "settings-item";
+
+			const info = document.createElement("div");
+			const label = document.createElement("div");
+			label.className = "settings-label";
+			label.textContent = labelText;
+			const desc = document.createElement("div");
+			desc.className = "settings-desc";
+			desc.textContent = descText;
+			info.appendChild(label);
+			info.appendChild(desc);
+
+			const toggle = document.createElement("div");
+			toggle.className = `toggle-switch${Settings[key] ? " active" : ""}`;
+			toggle.addEventListener("click", () => {
+				const active = !toggle.classList.contains("active");
+				toggle.classList.toggle("active", active);
+				Settings[key] = active;
+				Settings.save();
+				if (onToggle) {
+					onToggle(active);
+				}
+			});
+
+			row.appendChild(info);
+			row.appendChild(toggle);
+			return row;
+		};
+
+		// 4. Status Chip Toggle
+		const toggleStatus = createToggleRow(
+			"Status Filter",
+			"Show status filter chip",
+			"showStatusChip",
+			() => {
+				UIBuilder.updateChipVisibilities();
+			},
+		);
+		container.appendChild(toggleStatus);
+
+		// 5. Duration Chip Toggle
+		const toggleDuration = createToggleRow(
+			"Duration Filter",
+			"Show duration filter chip",
+			"showDurationChip",
+			() => {
+				UIBuilder.updateChipVisibilities();
+			},
+		);
+		container.appendChild(toggleDuration);
+
+		// 6. Age Chip Toggle
+		const toggleAge = createToggleRow(
+			"Age Filter",
+			"Show age filter chip",
+			"showAgeChip",
+			() => {
+				UIBuilder.updateChipVisibilities();
+			},
+		);
+		container.appendChild(toggleAge);
+
+		// 7. Views Chip Toggle
+		const toggleViews = createToggleRow(
+			"Views Filter",
+			"Show views filter chip",
+			"showViewsChip",
+			() => {
+				UIBuilder.updateChipVisibilities();
+			},
+		);
+		container.appendChild(toggleViews);
+
+		this.settingsPopover.appendChild(container);
+	},
+
 	hideAll() {
 		try {
 			this.durationPopover?.hidePopover();
 			this.viewsPopover?.hidePopover();
 			this.watchedPopover?.hidePopover();
 			this.agePopover?.hidePopover();
+			this.settingsPopover?.hidePopover();
 		} catch {
 			if (this.durationPopover) this.durationPopover.style.display = "none";
 			if (this.viewsPopover) this.viewsPopover.style.display = "none";
 			if (this.watchedPopover) this.watchedPopover.style.display = "none";
 			if (this.agePopover) this.agePopover.style.display = "none";
+			if (this.settingsPopover) this.settingsPopover.style.display = "none";
 		}
 	},
 };
@@ -2362,8 +3113,8 @@ const FetchInterceptor = {
 				if (isBrowseReq && isVideosTab && isPost && areFiltersActive) {
 					const now = Date.now();
 					const timeSinceLast = now - State.lastFetchTime;
-					if (timeSinceLast < CONFIG.THROTTLE_DELAY) {
-						const waitTime = CONFIG.THROTTLE_DELAY - timeSinceLast;
+					if (timeSinceLast < Settings.requestThrottle) {
+						const waitTime = Settings.requestThrottle - timeSinceLast;
 						return new Promise((resolve) => setTimeout(resolve, waitTime)).then(
 							() => {
 								State.lastFetchTime = Date.now();
@@ -2387,10 +3138,11 @@ const UIBuilder = {
 		const wrapper = document.createElement("div");
 		wrapper.className = CONFIG.CLASSES.CONTROLS_WRAPPER;
 
-		// 1. General Section
-		const secGeneral = document.createElement("div");
-		secGeneral.className = "ytsift-section-general";
+		// ── LEFT: Filters ──────────────────────────────────────
+		const filtersLeft = document.createElement("div");
+		filtersLeft.className = "ytsift-filters-left";
 
+		// 1. Search
 		const searchContainer = document.createElement("div");
 		searchContainer.className = CONFIG.CLASSES.SEARCH_CONTAINER;
 
@@ -2421,65 +3173,63 @@ const UIBuilder = {
 		searchContainer.appendChild(searchIconSpan);
 		searchContainer.appendChild(input);
 		searchContainer.appendChild(clearBtn);
+		filtersLeft.appendChild(searchContainer);
 
+		// 2. Status chip
 		const watchedChip = DOMRenderer.createChip({
 			id: "ytsift-chip-watched",
 			text: "Status ▾",
 			pressed: State.filters.watched.isActive(),
 		});
+		filtersLeft.appendChild(watchedChip);
 
-		secGeneral.appendChild(searchContainer);
-		secGeneral.appendChild(watchedChip);
-		wrapper.appendChild(secGeneral);
+		// Separator between general and duration/age section
+		const sep1 = document.createElement("div");
+		sep1.className = CONFIG.CLASSES.SEPARATOR;
+		sep1.id = "ytsift-sep-1";
+		filtersLeft.appendChild(sep1);
 
-		// Separator 1
-		const separator1 = document.createElement("div");
-		separator1.className = CONFIG.CLASSES.SEPARATOR;
-		wrapper.appendChild(separator1);
-
-		// 2. Duration Section
-		const secDuration = document.createElement("div");
-		secDuration.className = "ytsift-section-duration";
-
+		// 3. Duration chip
 		const durationChip = DOMRenderer.createChip({
 			id: "ytsift-chip-duration",
 			text: "Duration ▾",
 			pressed: State.filters.duration.isActive(),
 		});
+		filtersLeft.appendChild(durationChip);
+
+		// 4. Age chip
 		const ageChip = DOMRenderer.createChip({
 			id: "ytsift-chip-age",
 			text: "Age ▾",
 			pressed: State.filters.age.isActive(),
 		});
-		secDuration.appendChild(durationChip);
-		secDuration.appendChild(ageChip);
-		wrapper.appendChild(secDuration);
+		filtersLeft.appendChild(ageChip);
 
-		// Separator 2
-		const separator2 = document.createElement("div");
-		separator2.className = CONFIG.CLASSES.SEPARATOR;
-		wrapper.appendChild(separator2);
+		// Separator between duration/age and views section
+		const sep2 = document.createElement("div");
+		sep2.className = CONFIG.CLASSES.SEPARATOR;
+		sep2.id = "ytsift-sep-2";
+		filtersLeft.appendChild(sep2);
 
-		// 3. Views Section
-		const secViews = document.createElement("div");
-		secViews.className = "ytsift-section-views";
-
+		// 5. Views chip
 		const viewsChip = DOMRenderer.createChip({
 			id: "ytsift-chip-views",
 			text: "Views ▾",
 			pressed: State.filters.views.isActive(),
 		});
-		secViews.appendChild(viewsChip);
-		wrapper.appendChild(secViews);
+		filtersLeft.appendChild(viewsChip);
 
-		// Separator 3
-		const separator3 = document.createElement("div");
-		separator3.className = CONFIG.CLASSES.SEPARATOR;
-		wrapper.appendChild(separator3);
+		wrapper.appendChild(filtersLeft);
 
-		// 4. Actions Section
-		const secActions = document.createElement("div");
-		secActions.className = "ytsift-section-actions";
+		// ── SEPARATOR between filters and actions ──────────────
+		const sepActions = document.createElement("div");
+		sepActions.className = CONFIG.CLASSES.SEPARATOR;
+		sepActions.id = "ytsift-sep-actions";
+		wrapper.appendChild(sepActions);
+
+		// ── RIGHT: Actions ─────────────────────────────────────
+		const actionsRight = document.createElement("div");
+		actionsRight.className = "ytsift-actions-right";
 
 		const counterBadge = document.createElement("span");
 		counterBadge.className = CONFIG.CLASSES.COUNTER;
@@ -2487,20 +3237,37 @@ const UIBuilder = {
 		counterBadge.textContent = "0 / 0";
 		counterBadge.setAttribute("role", "status");
 		counterBadge.setAttribute("aria-live", "polite");
-		secActions.appendChild(counterBadge);
+		actionsRight.appendChild(counterBadge);
 
 		const clearAllBtn = document.createElement("button");
 		clearAllBtn.id = "ytsift-clear-all";
 		clearAllBtn.className = "ytsift-clear-all-btn";
 		clearAllBtn.textContent = "Clear All";
-		secActions.appendChild(clearAllBtn);
+		actionsRight.appendChild(clearAllBtn);
 
 		const enqueueAllBtn = document.createElement("button");
 		enqueueAllBtn.id = "ytsift-enqueue-all";
 		enqueueAllBtn.className = "ytsift-enqueue-all-btn";
 		enqueueAllBtn.textContent = "+ Queue";
-		secActions.appendChild(enqueueAllBtn);
-		wrapper.appendChild(secActions);
+		actionsRight.appendChild(enqueueAllBtn);
+
+		// Settings button
+		const settingsWrapper = document.createElement("div");
+		settingsWrapper.className = "ytsift-popover-wrapper";
+
+		const settingsBtn = document.createElement("button");
+		settingsBtn.id = "ytsift-settings-btn";
+		settingsBtn.className = "ytsift-settings-btn";
+		settingsBtn.title = "Settings";
+		settingsBtn.appendChild(
+			DOMRenderer.createSvgIcon(
+				"M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.43-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z",
+			),
+		);
+		settingsWrapper.appendChild(settingsBtn);
+		actionsRight.appendChild(settingsWrapper);
+
+		wrapper.appendChild(actionsRight);
 
 		chipBar.prepend(wrapper);
 		State.lastCardCount = document.querySelectorAll(
@@ -2516,9 +3283,11 @@ const UIBuilder = {
 			ageChip,
 			clearAllBtn,
 			enqueueAllBtn,
+			settingsBtn,
 		);
 		this.updateWatchedChipText();
 		this.updateAgeChipText();
+		this.updateChipVisibilities();
 
 		FilterEngine.apply();
 	},
@@ -2527,8 +3296,9 @@ const UIBuilder = {
 		const chip = document.getElementById("ytsift-chip-watched");
 		if (!chip) return;
 
+		chip.textContent = "Status ▾";
+
 		if (!State.filters.watched.isActive()) {
-			chip.textContent = "Status ▾";
 			chip.classList.remove(CONFIG.CLASSES.ACTIVE);
 			chip.setAttribute("aria-pressed", "false");
 			return;
@@ -2536,31 +3306,15 @@ const UIBuilder = {
 
 		chip.classList.add(CONFIG.CLASSES.ACTIVE);
 		chip.setAttribute("aria-pressed", "true");
-
-		const type = State.filters.watched.type;
-		const percent = State.filters.watched.percent;
-
-		if (type === "watched") {
-			chip.textContent = `Watched (>= ${percent}%) ▾`;
-			return;
-		}
-
-		if (type === "unwatched") {
-			chip.textContent = `Unwatched (< ${percent}%) ▾`;
-			return;
-		}
-
-		chip.textContent = "Status ▾";
-		chip.classList.remove(CONFIG.CLASSES.ACTIVE);
-		chip.setAttribute("aria-pressed", "false");
 	},
 
 	updateDurationChipText() {
 		const chip = document.getElementById("ytsift-chip-duration");
 		if (!chip) return;
 
+		chip.textContent = "Duration ▾";
+
 		if (State.filters.duration.preset === null) {
-			chip.textContent = "Duration ▾";
 			chip.classList.remove(CONFIG.CLASSES.ACTIVE);
 			chip.setAttribute("aria-pressed", "false");
 			return;
@@ -2568,29 +3322,6 @@ const UIBuilder = {
 
 		chip.classList.add(CONFIG.CLASSES.ACTIVE);
 		chip.setAttribute("aria-pressed", "true");
-
-		const min = State.filters.duration.min;
-		const max = State.filters.duration.max;
-
-		if (State.filters.duration.preset === "short" && min === 0 && max === 4) {
-			chip.textContent = "Duration: Short ▾";
-			return;
-		}
-		if (State.filters.duration.preset === "medium" && min === 4 && max === 20) {
-			chip.textContent = "Duration: Medium ▾";
-			return;
-		}
-		if (
-			State.filters.duration.preset === "long" &&
-			min === 20 &&
-			max === Number.POSITIVE_INFINITY
-		) {
-			chip.textContent = "Duration: Long ▾";
-			return;
-		}
-
-		const maxText = max === Number.POSITIVE_INFINITY ? "+" : `-${max}`;
-		chip.textContent = `Duration: ${min}${maxText}m ▾`;
 	},
 
 	formatViewsLabel(val) {
@@ -2604,94 +3335,52 @@ const UIBuilder = {
 		const chip = document.getElementById("ytsift-chip-views");
 		if (!chip) return;
 
+		chip.textContent = "Views ▾";
+
 		if (!State.filters.views.isActive()) {
-			chip.textContent = "Views ▾";
 			chip.classList.remove(CONFIG.CLASSES.ACTIVE);
 			chip.setAttribute("aria-pressed", "false");
 			return;
 		}
 
-		chip.classList.add(CONFIG.CLASSES.ACTIVE);
-		chip.setAttribute("aria-pressed", "true");
-
 		const min = State.filters.views.min;
 		const max = State.filters.views.max;
 
 		if (min === 0 && max === Number.POSITIVE_INFINITY) {
-			chip.textContent = "Views ▾";
 			chip.classList.remove(CONFIG.CLASSES.ACTIVE);
 			chip.setAttribute("aria-pressed", "false");
 			State.filters.views.reset();
 			return;
 		}
 
-		if (min > 0 && max === Number.POSITIVE_INFINITY) {
-			chip.textContent = `Views: >${this.formatViewsLabel(min)} ▾`;
-			return;
-		}
-
-		if (min === 0 && max < Number.POSITIVE_INFINITY) {
-			chip.textContent = `Views: <${this.formatViewsLabel(max)} ▾`;
-			return;
-		}
-
-		chip.textContent = `Views: ${this.formatViewsLabel(min)}-${this.formatViewsLabel(max)} ▾`;
+		chip.classList.add(CONFIG.CLASSES.ACTIVE);
+		chip.setAttribute("aria-pressed", "true");
 	},
 
 	updateAgeChipText() {
 		const chip = document.getElementById("ytsift-chip-age");
 		if (!chip) return;
 
+		chip.textContent = "Age ▾";
+
 		if (!State.filters.age.isActive()) {
-			chip.textContent = "Age ▾";
 			chip.classList.remove(CONFIG.CLASSES.ACTIVE);
 			chip.setAttribute("aria-pressed", "false");
 			return;
 		}
 
-		chip.classList.add(CONFIG.CLASSES.ACTIVE);
-		chip.setAttribute("aria-pressed", "true");
-
 		const min = State.filters.age.min;
 		const max = State.filters.age.max;
 
 		if (min === 0 && max === Number.POSITIVE_INFINITY) {
-			chip.textContent = "Age ▾";
 			chip.classList.remove(CONFIG.CLASSES.ACTIVE);
 			chip.setAttribute("aria-pressed", "false");
 			State.filters.age.reset();
 			return;
 		}
 
-		const formatAgeLabel = (days) => {
-			if (days === 0) return "0d";
-			if (days === Number.POSITIVE_INFINITY) return "Max";
-			if (days >= 365) {
-				const yrs = days / 365;
-				return `${yrs.toFixed(1).replace(".0", "")}y`;
-			}
-			if (days >= 30) {
-				const mos = days / 30;
-				return `${mos.toFixed(1).replace(".0", "")}mo`;
-			}
-			if (days >= 7) {
-				const wks = days / 7;
-				return `${wks.toFixed(1).replace(".0", "")}w`;
-			}
-			return `${days}d`;
-		};
-
-		if (min > 0 && max === Number.POSITIVE_INFINITY) {
-			chip.textContent = `Age: >${formatAgeLabel(min)} ▾`;
-			return;
-		}
-
-		if (min === 0 && max < Number.POSITIVE_INFINITY) {
-			chip.textContent = `Age: <${formatAgeLabel(max)} ▾`;
-			return;
-		}
-
-		chip.textContent = `Age: ${formatAgeLabel(min)}-${formatAgeLabel(max)} ▾`;
+		chip.classList.add(CONFIG.CLASSES.ACTIVE);
+		chip.setAttribute("aria-pressed", "true");
 	},
 
 	wireEvents(
@@ -2703,6 +3392,7 @@ const UIBuilder = {
 		ageChip,
 		clearAllBtn,
 		enqueueAllBtn,
+		settingsBtn,
 	) {
 		input.addEventListener("input", () => {
 			State.filters.text.setQuery(input.value);
@@ -2804,15 +3494,21 @@ const UIBuilder = {
 			const videoIds = QueueManager.getVisibleVideoIds();
 			if (videoIds.length === 0) return;
 
+			// Freeze width to prevent layout shifting
+			enqueueAllBtn.style.width = `${enqueueAllBtn.offsetWidth}px`;
 			enqueueAllBtn.disabled = true;
 			enqueueAllBtn.style.opacity = "0.5";
 			enqueueAllBtn.style.cursor = "not-allowed";
 
 			const total = videoIds.length;
 			for (let i = 0; i < total; i++) {
+				const pct = Math.round(((i + 1) / total) * 100);
 				enqueueAllBtn.textContent = `Queuing (${i + 1}/${total})`;
+				enqueueAllBtn.style.background = `linear-gradient(to right, var(--ytsift-hover-bg) ${pct}%, transparent ${pct}%)`;
 				QueueManager.enqueueVideo(videoIds[i]);
-				await new Promise((resolve) => setTimeout(resolve, 150));
+				await new Promise((resolve) =>
+					setTimeout(resolve, Settings.queueThrottle),
+				);
 			}
 
 			enqueueAllBtn.textContent = "Done!";
@@ -2821,7 +3517,21 @@ const UIBuilder = {
 				enqueueAllBtn.disabled = false;
 				enqueueAllBtn.style.opacity = "1";
 				enqueueAllBtn.style.cursor = "pointer";
+				enqueueAllBtn.style.width = "";
+				enqueueAllBtn.style.background = "";
 			}, 1000);
+		});
+
+		settingsBtn.addEventListener("click", () => {
+			const wasJustClosed =
+				Date.now() - PopoverManager.lastSettingsClosedTime < 150;
+			PopoverManager.hideAll();
+
+			if (wasJustClosed) {
+				return;
+			}
+
+			PopoverManager.showSettings(settingsBtn);
 		});
 
 		clearAllBtn.addEventListener("click", () => {
@@ -2843,7 +3553,7 @@ const UIBuilder = {
 			PopoverManager.hideAll();
 			PopoverManager.updateDurationInputs("", "");
 			PopoverManager.updateViewsInputs("", "");
-			PopoverManager.updateWatchedInputs("all", 10);
+			PopoverManager.updateWatchedInputs("all", Settings.defaultWatched);
 			PopoverManager.updateAgeInputs("", "");
 
 			const btnShort = PopoverManager.durationPopover.querySelector(
@@ -2867,12 +3577,66 @@ const UIBuilder = {
 			FilterEngine.apply();
 		});
 	},
+
+	updateChipVisibilities() {
+		const watchedChip = document.getElementById("ytsift-chip-watched");
+		const durationChip = document.getElementById("ytsift-chip-duration");
+		const ageChip = document.getElementById("ytsift-chip-age");
+		const viewsChip = document.getElementById("ytsift-chip-views");
+
+		const sep1 = document.getElementById("ytsift-sep-1");
+		const sep2 = document.getElementById("ytsift-sep-2");
+
+		// Apply visibility from settings
+		const statusVisible = Settings.showStatusChip;
+		const durationVisible = Settings.showDurationChip;
+		const ageVisible = Settings.showAgeChip;
+		const viewsVisible = Settings.showViewsChip;
+
+		if (watchedChip)
+			watchedChip.style.display = statusVisible ? "inline-flex" : "none";
+		if (durationChip)
+			durationChip.style.display = durationVisible ? "inline-flex" : "none";
+		if (ageChip) ageChip.style.display = ageVisible ? "inline-flex" : "none";
+		if (viewsChip)
+			viewsChip.style.display = viewsVisible ? "inline-flex" : "none";
+
+		// Separator 1 sits between Status and Duration/Age.
+		// Show it only when there's at least one visible chip on BOTH sides.
+		const leftOfSep1 = statusVisible;
+		const rightOfSep1 = durationVisible || ageVisible;
+		if (sep1) sep1.style.display = leftOfSep1 && rightOfSep1 ? "block" : "none";
+
+		// Separator 2 sits between Duration/Age and Views.
+		// Show it only when there's at least one visible chip on BOTH sides.
+		const leftOfSep2 = durationVisible || ageVisible;
+		const rightOfSep2 = viewsVisible;
+		if (sep2) sep2.style.display = leftOfSep2 && rightOfSep2 ? "block" : "none";
+	},
 };
+
+function throttle(func, limit) {
+	let inThrottle;
+	return function (...args) {
+		if (!inThrottle) {
+			func.apply(this, args);
+			inThrottle = true;
+			setTimeout(() => {
+				inThrottle = false;
+			}, limit);
+		}
+	};
+}
 
 const AppObserver = {
 	observer: null,
+	throttledApply: null,
 
 	init() {
+		this.throttledApply = throttle(() => {
+			FilterEngine.apply();
+		}, 250);
+
 		this.observer = new MutationObserver((mutations) =>
 			this.handleMutations(mutations),
 		);
@@ -2915,7 +3679,7 @@ const AppObserver = {
 			).length;
 			if (currentCardCount !== State.lastCardCount) {
 				State.lastCardCount = currentCardCount;
-				FilterEngine.apply();
+				this.throttledApply();
 			}
 		}
 	},
@@ -2923,6 +3687,7 @@ const AppObserver = {
 
 const App = {
 	init() {
+		Settings.load();
 		StyleManager.inject();
 		PopoverManager.init();
 		FetchInterceptor.install();
